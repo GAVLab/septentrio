@@ -41,15 +41,15 @@ class gSeptentrio
     SEP_FLAGS sep_flags;
     SEP_HEADER latest_header;
     SEP_PVTXYZ latest_pvtxyz;
-  SEP_PVTXYZ_POS_COV latest_pvtxyz_pos_cov;
-  SEP_PVTXYZ_VEL_COV latest_pvtxyz_vel_cov;
+    SEP_PVTXYZ_POS_COV latest_pvtxyz_pos_cov;
+    SEP_PVTXYZ_VEL_COV latest_pvtxyz_vel_cov;
     SEP_ATTEULER latest_atteuler;
-  SEP_ATTEULER_COV latest_atteuler_cov;
+    SEP_ATTEULER_COV latest_atteuler_cov;
     SEP_RECEIVERTIME latest_receivertime;
-  SEP_EPHEMERIS latest_ephemeris;
-  SEP_RANGE_HEADING latest_range_heading;
-  SEP_RANGE_SUB_BLOCK latest_range_sub_block;
-  RANGE_DATA latest_range_data;
+    SEP_EPHEMERIS latest_ephemeris;
+    SEP_RANGE_HEADING latest_range_heading;
+    SEP_RANGE_SUB_BLOCK latest_range_sub_block;
+    RANGE_DATA latest_range_data;
     int block_ID;
     //ofstream sep_file;
   bool display_messages;
@@ -65,10 +65,21 @@ class gSeptentrio
     bool RequestNMEACOM3(); // request NMEA message over COM3 on Septentrio
     bool SetAntennaLocations(int ant_num, string x, string y, string z);
     void SetRTK(string RTK_com,string RTK_baud,string RTK_correction_type);
-      void BufferIncomingData(unsigned char* msg, unsigned int length); //!< data read from serial port is passed to this method
+    void BufferIncomingData(unsigned char* msg, unsigned int length); //!< data read from serial port is passed to this method
     void ParseASCII(unsigned char* block); //Parse ASCII message from septentrio
     void ParseBlock(unsigned char* block, unsigned short ID); //!< Parses one septentrio block
-    bool OnInitialized(); //!< Sets the rate of the message output
+    bool OnInitialized(); //!< Sets the rate of the message outputSEP_FLAGS sep_flags;
+    SEP_HEADER latest_header;
+    SEP_PVTXYZ latest_pvtxyz;
+    SEP_PVTXYZ_POS_COV latest_pvtxyz_pos_cov;
+    SEP_PVTXYZ_VEL_COV latest_pvtxyz_vel_cov;
+    SEP_ATTEULER latest_atteuler;
+    SEP_ATTEULER_COV latest_atteuler_cov;
+    SEP_RECEIVERTIME latest_receivertime;
+    SEP_EPHEMERIS latest_ephemeris;
+    SEP_RANGE_HEADING latest_range_heading;
+    SEP_RANGE_SUB_BLOCK latest_range_sub_block;
+    RANGE_DATA latest_range_data;
     void update_ephemeris(double &blockTime);
     void update_range(unsigned char* block, double &blockTime);
 

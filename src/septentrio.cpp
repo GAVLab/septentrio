@@ -1,11 +1,12 @@
 //Written by:
 //  Lowell Brown & David Hodo
 //  Auburn University
+//  Septentrio Documentation: http://www.septentrio.com/secure/polarx3_2_2/PolaRx2Manual.pdf
 
 #include <septentrio/septentrio.h>
 
 
-gSeptentrio::gSeptentrio()
+Septentrio::gSeptentrio()
 {
 	display_messages=0;//set to 1 to display a messages when a block is received
 	good_antenna_locations=true;
@@ -13,7 +14,7 @@ gSeptentrio::gSeptentrio()
 	bufIndex=0;
 }
 
-bool gSeptentrio::OnInitialized()
+bool Septentrio::OnInitialized()
 {
 	RequestLog();
 	MOOSPause(500);
@@ -117,7 +118,7 @@ bool gSeptentrio::OnInitialized()
 	return true;
 }
 
-bool gSeptentrio::RequestLogRate(string outputRate)
+bool septentrio::RequestLogRate(string outputRate)
 {
 	string cmd="SetPVTInterval " +outputRate+"\r\n";
 	//TODO: read block rate from mission file
@@ -125,7 +126,7 @@ bool gSeptentrio::RequestLogRate(string outputRate)
 
 }
 
-bool gSeptentrio::RequestRangeLogRate(string outputRate)
+bool septentrio::RequestRangeLogRate(string outputRate)
 {
 	string cmd="SetMeasInterval " +outputRate+"\r\n";
 	//TODO: read block rate from mission file
@@ -134,7 +135,7 @@ bool gSeptentrio::RequestRangeLogRate(string outputRate)
 }
 
 //probably want to change to generic selected COM port for NMEA output message
-bool gSeptentrio::RequestNMEACOM3()
+bool septentrio::RequestNMEACOM3()
 {
 	string cmd="SetNMEAOutput COM3, GLL+GSV #EoL\r\n";
 //GLL and GSV place holders until Sarnoff knows what they want
@@ -142,7 +143,7 @@ bool gSeptentrio::RequestNMEACOM3()
 return (SendString(cmd)==cmd.length());
 }
 
-bool gSeptentrio::ConfigureLogging(string &sLogs)
+bool septentrio::ConfigureLogging(string &sLogs)
 {
 	//figure out what we are required to log....
     //here we read in what we want to log from the mission file..
@@ -175,7 +176,7 @@ bool gSeptentrio::ConfigureLogging(string &sLogs)
 }
 
 
-bool gSeptentrio::RequestLog()
+bool septentrio::RequestLog()
 {
 	string sLogs="";
 	string septentrioCom; //The comm port number on the Septentrio reciever
@@ -192,7 +193,7 @@ bool gSeptentrio::RequestLog()
 	//TODO: check for acknowledgement from receiver??
 }
 
-void gSeptentrio::BufferIncomingData(unsigned char *msg, unsigned int length)
+void septentrio::BufferIncomingData(unsigned char *msg, unsigned int length)
 {
 	//cout<<"Buffering\n";
 		
@@ -238,7 +239,7 @@ void gSeptentrio::BufferIncomingData(unsigned char *msg, unsigned int length)
 				bytesRemaining=0;
 				readingASCII=false;
 			} // end if (msg[i]==0x40)
-		}	// end else if (bufIndex==1)
+		}	// end else if (bufIndex==1)http://www.septentrio.com/secure/polarx3_2_2/PolaRx2Manual.pdf
 		else if (bufIndex==7)
 		{	// reading last byte of header
 				//cout<<"(bufIndex==7)\n";
@@ -285,7 +286,7 @@ void gSeptentrio::BufferIncomingData(unsigned char *msg, unsigned int length)
 	}	// end for
 }
 
-void gSeptentrio::ParseASCII(unsigned char* block)
+void septentrio::ParseASCII(unsigned char* block)
 {	
 	double blockTime=MOOSTime();
 	stringstream ss (stringstream::in | stringstream::out);
