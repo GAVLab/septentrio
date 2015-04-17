@@ -13,18 +13,19 @@
 #include <boost/foreach.hpp>
 #include <boost/tokenizer.hpp>
 #include "septentrio_structs.h"
+#include <ros/console.h>
 
 
 using namespace std;
 using namespace boost;
 
 
-class gSeptentrio
+class septentrio
 {
 
   public:
-    gSeptentrio();
-    ~gSeptentrio(){};
+    septentrio();
+    ~septentrio(){};
 
     void display_sep_file(int block_ID);
 

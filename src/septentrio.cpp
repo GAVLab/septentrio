@@ -425,7 +425,7 @@ void septentrio::ParseASCII(unsigned char* block)
 	cout<<"\nASCII MESSAGE!!!\n";
 	//cout<<block;
 }
-void gSeptentrio::ParseBlock(unsigned char* block, unsigned short ID)
+void septentrio::ParseBlock(unsigned char* block, unsigned short ID)
 {
 	//MOOSTrace("Received ID: %i \r\n",ID);
 	double blockTime=MOOSTime();
@@ -617,7 +617,7 @@ void gSeptentrio::ParseBlock(unsigned char* block, unsigned short ID)
 
 
 // Could not get CRC to work properly //
-unsigned short gSeptentrio::ComputeCRC(char * buf, int buf_length)
+unsigned short septentrio::ComputeCRC(char * buf, int buf_length)
 {
       int  i;
       unsigned short  crc = 0;
@@ -630,7 +630,7 @@ unsigned short gSeptentrio::ComputeCRC(char * buf, int buf_length)
       return crc;
 }
 
-bool gSeptentrio::CRC_check(char *head, char *mess, int tot_length, int CRC)
+bool septentrio::CRC_check(char *head, char *mess, int tot_length, int CRC)
 {
     int j;
     int Calculate_CRC;
@@ -661,7 +661,7 @@ bool gSeptentrio::CRC_check(char *head, char *mess, int tot_length, int CRC)
 
 }
 
-void gSeptentrio::update_ephemeris(double &blockTime){
+void septentrio::update_ephemeris(double &blockTime){
 
 	double ephems[22];
 	ephems[0] = (unsigned int)latest_ephemeris.PRN;
@@ -692,7 +692,7 @@ void gSeptentrio::update_ephemeris(double &blockTime){
 	PublishToDatabase(VarName,     stringUtils::precise_to_string(ephems,22,16), blockTime);
 
 }
-void gSeptentrio::update_range(unsigned char* block, double &blockTime){
+void septentrio::update_range(unsigned char* block, double &blockTime){
 
 	int number_observations_1=0;
 	int number_observations_2=0;
@@ -804,7 +804,7 @@ void gSeptentrio::update_range(unsigned char* block, double &blockTime){
 	//PublishToDatabase("zP2C2N_3",  stringUtils::precise_to_string(latest_range_data.P2C2N_3,number_observations_3,5), blockTime);
 
 }
-bool gSeptentrio::SetAntennaLocations(int ant_num, string x, string y, string z)
+bool septentrio::SetAntennaLocations(int ant_num, string x, string y, string z)
 {
 
 /*
@@ -837,7 +837,7 @@ bool gSeptentrio::SetAntennaLocations(int ant_num, string x, string y, string z)
 	//TODO: check for acknowledgement from receiver??
 }
 
-void gSeptentrio::SetRTK(string RTK_com,string RTK_baud,string RTK_correction_type)
+void septentrio::SetRTK(string RTK_com,string RTK_baud,string RTK_correction_type)
 {
 	string cmd;
 
