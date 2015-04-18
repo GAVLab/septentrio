@@ -98,6 +98,7 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  include
 )
 
 ## Declare a cpp library
@@ -109,6 +110,8 @@ add_library(septentrio
 ## Specify libraries to link a library or executable target against
 target_link_libraries(septentrio
   ${catkin_LIBRARIES}
+  ${Boost_SYSTEM_LIBRARY}
+  ${Boost_THREAD_LIBRARY}
 )
 
 # ## Declare a cpp executable

@@ -5,6 +5,6 @@ class SeptentrioNode
 {
   SeptentrioNode();
 
-  void publish____Message(___type data, double timestamp);
+  void 3(___type data, double timestamp);
   
 }

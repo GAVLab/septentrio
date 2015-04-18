@@ -1,7 +1,8 @@
 #define MAX_MSG_SIZE 4096 //!< see header message length
 //#define PI 3.14159265
-using namespace std;
-using namespace boost;
+
+// using namespace std;
+// using namespace boost;
 
 #pragma pack ( push , 1)
 struct SEP_FLAGS
