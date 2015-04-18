@@ -6,27 +6,71 @@
 #include <septentrio/septentrio.h>
 
 
+double defaultGetTimeCallback() {
+  boost::posix_time::ptime present_time(
+          boost::posix_time::microsec_clock::universal_time());
+  boost::posix_time::time_duration duration(present_time.time_of_day());
+  return duration.total_seconds();
+}
+
+
+void defaultReceiverTimeCallback(SEP_RECEIVERTIME & data, double& cpu_stamp) {
+  std::cout << "Received SEP_RECEIVERTIME\n" << std::endl;
+}
+
+
+void defaultPvtCartestianCallback(SEP_PVTXYZ & data, double& cpu_stamp) {
+  std::cout << "Received SEP_PVTXYZ\n" << std::endl;
+}
+
+
+void defaultPosCovCartesianCallback(SEP_PVTXYZ_POS_COV & data, double& cpu_stamp) {
+  std::cout << "Received SEP_PVTXYZ_POS_COV\n" << std::endl;
+}
+
+
+void defaultVelCovCaresianCallback(SEP_PVTXYZ_VEL_COV & data, double& cpu_stamp) {
+  std::cout << "Received SEP_PVTXYZ_VEL_COV\n" << std::endl;
+}
+
+
+void defaultAttitudeEulerCallback(SEP_ATTEULER & data, double& cpu_stamp) {
+  std::cout << "Received SEP_ATTEULER\n" << std::endl;
+}
+
+
+void defaultAttitudeCovEulerCallback(SEP_ATTEULER_COV & data, double& cpu_stamp) {
+  std::cout << "Received SEP_ATTEULER_COV\n" << std::endl;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 Septentrio::Septentrio()
 {
-
   /* initialize serial reader values */
-  display_messages = 0;//set to 1 to display a messages when a block is received
   good_antenna_locations = true;
   bytesRemaining = 0;
   bufIndex = 0;
   is_connected = false;
 
+  time_handler =                    defaultGetTimeCallback;
+  receiver_time_callback =          defaultReceiverTimeCallback;
+  pvt_cartesian_callback =          defaultPvtCartestianCallback;
+  pos_cov_cartesian_callback =      defaultPosCovCartesianCallback;
+  vel_cov_cartesian_callback =      defaultVelCovCaresianCallback;
+  attitude_euler_callback =         defaultAttitudeEulerCallback;
+  attitude_cov_euler_callback =     defaultAttitudeCovEulerCallback;
   
   setOutputRate("1");
   setRangeOutputRate("1");
 
   manual_position = false;
-  x1 = 0.0292;
-  y1 = 1.1464;
-  z1 = 0;
-  x2 = 1.9091;
-  y2 = 0;
-  z2 = 0;
+  x1 = "0.0292";
+  y1 = "1.1464";
+  z1 = "0";
+  x2 = "1.9091";
+  y2 = "0";
+  z2 = "0";
 
    //Specifically for Sarnoff
   //spits out NMEA messages over COM3 (5 pin output)
@@ -68,14 +112,12 @@ Septentrio::Septentrio()
   //   }
   //   SetRTK(RTK_com,RTK_baud,RTK_correction_type);
   // }
-
-  return true;
 }
 
 
 Septentrio::~Septentrio()
 {
-  Disconnect();
+  disconnect();
 }
 
 
@@ -84,10 +126,9 @@ Septentrio::~Septentrio()
 /////////////////////////////////////////
 
 
-bool Septentrio::Connect(std::string port, int baudrate=115200, std::string septentrio_port_="COM1")
+bool Septentrio::connect(std::string port, int baudrate, std::string septentrio_port_)
 {
   septentrio_port = septentrio_port_;
-  //serial_port_ = new serial::Serial(port,baudrate,serial::Timeout::simpleTimeout(1000));
   serial::Timeout my_timeout(100, 1000, 0, 1000, 0);
   try {
     serial_port = new serial::Serial(port, baudrate, my_timeout);
@@ -105,7 +146,7 @@ bool Septentrio::Connect(std::string port, int baudrate=115200, std::string sept
       // log_info_(output.str());
     }
 
-    serial_port_->flush();
+    serial_port->flush();
 
     // !!!!!!!!!!!!!
     // Assume that connection is successful
@@ -116,8 +157,8 @@ bool Septentrio::Connect(std::string port, int baudrate=115200, std::string sept
     //   std::stringstream output;
     //   output << "Septentrio GPS not found on port: " << port << std::endl;
     //   log_error_(output.str());
-    //   delete serial_port_;
-    //   serial_port_ = NULL;
+    //   delete serial_port;
+    //   serial_port = NULL;
     //   is_connected_ = false;
     //   return false;
     // } 
@@ -126,20 +167,20 @@ bool Septentrio::Connect(std::string port, int baudrate=115200, std::string sept
     // std::stringstream output;
     // output << "Failed to open port " << port << "  Err: " << e.what();
     // log_error_(output.str());
-    serial_port_ = NULL;
-    is_connected_ = false;
+    serial_port = NULL;
+    is_connected = false;
     return false;
   }
 
   // start reading
-  StartReading();
-  is_connected_ = true;
+  startReading();
+  is_connected = true;
 
   std::string galcmd;
   
   if (manual_position) {
-    cout<<"manual position true\t"<<x2<<endl;
-    galcmd="gal\r\n";
+    std::cout << "manual position true\t" << x2 << std::endl;
+    galcmd = "gal\r\n";
     serial_port->write(galcmd)==galcmd.length();
     SetAntennaLocations(1, x1, y1, z1);
     SetAntennaLocations(2, x2, y2, z2);
@@ -150,18 +191,18 @@ bool Septentrio::Connect(std::string port, int baudrate=115200, std::string sept
 }
 
 
-void Septentrio::Disconnect()
+void Septentrio::disconnect()
 {
   try {
-    if (reading_status_) {
-      StopReading();
+    if (reading_status) {
+      stopReading();
       // TODO: wait here for reading to stop
     }
-    if (serial_port_ != NULL) {
-      if (serial_port_->isOpen())
-        serial_port_->close();
-      delete serial_port_;
-      serial_port_ = NULL;
+    if (serial_port != NULL) {
+      if (serial_port->isOpen())
+        serial_port->close();
+      delete serial_port;
+      serial_port = NULL;
     }
   } catch (std::exception &e) {
     // stringstream output;
@@ -172,12 +213,12 @@ void Septentrio::Disconnect()
 }
 
 
-void Septentrio::StartReading() {
+void Septentrio::startReading() {
   try {
     // create thread to read from sensor
     reading_status = true;
     read_thread_ptr = boost::shared_ptr<boost::thread>(
-        new boost::thread(boost::bind(&Septentrio::ReadSerialPort, this)));
+        new boost::thread(boost::bind(&Septentrio::readSerialPort, this)));
   } catch (std::exception &e) {
     // std::stringstream output;
     // output << "Error starting ublox read thread: " << e.what();
@@ -186,12 +227,12 @@ void Septentrio::StartReading() {
 }
 
 
-void Septentrio::StopReading() {
-    reading_status_ = false;
+void Septentrio::stopReading() {
+    reading_status = false;
 }
 
 
-void Septentrio::ReadSerialPort() {
+void Septentrio::readSerialPort() {
     uint8_t buffer[MAX_NOUT_SIZE];
     size_t len;
 
@@ -200,15 +241,15 @@ void Septentrio::ReadSerialPort() {
       // read data
       try {
           len = serial_port->read(buffer, MAX_NOUT_SIZE);
-      } catch (exception &e) {
+      } catch (std::exception &e) {
           // stringstream output;
           // output << "Error reading serial port: " << e.what();
           // log_info_(output.str());
-          Disconnect();
+          disconnect();
           return;
       }
       // timestamp the read
-      read_timestamp_ = time_handler_();
+      read_timestamp = time_handler();
       // add data to the buffer to be parsed
       bufferIncomingData(buffer, len);
     }
@@ -221,26 +262,26 @@ void Septentrio::ReadSerialPort() {
 /////////////////////////////////
 
 
-bool Septentrio::RequestLog(std::string logcode_)
+bool Septentrio::requestLog(std::string logcode_)
 {
-  string cmd="SetSBFOutput " + septentrio_port + ", " + logcode_ + "\r\n";
+  std::string cmd="SetSBFOutput " + septentrio_port + ", " + logcode_ + "\r\n";
   return (serial_port->write(cmd)==cmd.length());
 }
 
 
-bool Septentrio::setOutputRate(string r)
+bool Septentrio::setOutputRate(std::string r)
 {
   output_rate = r;
-  string cmd = "SetPVTInterval " + output_rate + "\r\n";
+  std::string cmd = "SetPVTInterval " + output_rate + "\r\n";
   //TODO: read block rate from mission file
   return (serial_port->write(cmd)==cmd.length());
 };
 
 
-bool Septentrio::setRangeOutputRate(string r)
+bool Septentrio::setRangeOutputRate(std::string r)
 {
   range_output_rate = r;
-  string cmd = "SetMeasInterval " + range_output_rate + "\r\n";
+  std::string cmd = "SetMeasInterval " + range_output_rate + "\r\n";
   //TODO: read block rate from mission file
   return (serial_port->write(cmd)==cmd.length());
 };
@@ -391,7 +432,7 @@ void Septentrio::bufferIncomingData(uint8_t *msg, size_t length)
     if (bufIndex>=MAX_MSG_SIZE)
     {
       bufIndex=0;
-      MOOSTrace("Septentrio: Overflowed receive buffer. Reset");
+      std::cout << "Septentrio: Overflowed receive buffer. Reset" << std::endl;
     }
 
     if (bufIndex==0)
@@ -438,7 +479,7 @@ void Septentrio::bufferIncomingData(uint8_t *msg, size_t length)
     { // add last byte and parse
       //cout<<"(bytesRemaining==1)\n";
       dataBuf[bufIndex++]=msg[i];
-      ParseBlock(dataBuf,latest_header.ID);
+      ParseBinary(dataBuf,latest_header.ID);
       // reset counters
       bufIndex=0;
       bytesRemaining=0;
@@ -453,7 +494,7 @@ void Septentrio::bufferIncomingData(uint8_t *msg, size_t length)
     else if ((readingASCII)&&(bufIndex>7))
     {
       //cout<<"reading ascii message\n";
-      //cout<<hex<<(int)msg[i]<<endl;
+      //cout<<hex<<(int)msg[i]<< std::endl;
       if (!((msg[i]==0x23)||(msg[i]==0x0D))) //looking for end of line character, a pound symbol from the septentrio, hex 0x23
       {
         dataBuf[bufIndex++]=msg[i];
@@ -471,429 +512,301 @@ void Septentrio::bufferIncomingData(uint8_t *msg, size_t length)
 
 void Septentrio::ParseASCII(unsigned char* block)
 { 
-  double blockTime=MOOSTime();
   std::stringstream ss (std::stringstream::in | std::stringstream::out);
   std::string block2;
   //string block="$PolaRx: SetAntennaLocation auto, 2, 5.23, 10.00, -2.000\n $PolaRx: SetAntennaLocation manual, 2, 0.47355, 10.51, -2.143\n";
-  cout<<"BLOCKS:\n"<<block<<endl;
-  ss<<block;
+  std::cout << "BLOCKS:\n" << block << std::endl;
+  ss << block;
   getline(ss,block2);
-  cout<<block2<<endl;
+  std::cout << block2 << std::endl;
    
   int i;
   float f;
   
-  char_separator<char> sep("\n");
-  tokenizer<char_separator<char> > lines(block2,sep);
-  BOOST_FOREACH(std::string line, lines)
-  {
-    cout<<"LINE:\n";
-    char_separator<char> sep2(", ");
-    tokenizer<char_separator<char> > tokens(line,sep2);
+  boost::char_separator<char> sep("\n");
+  boost::tokenizer<boost::char_separator<char> > lines(block2,sep);
+  BOOST_FOREACH(std::string line, lines) {
+    std::cout << "LINE:\n";
+    boost::char_separator<char> sep2(", ");
+    boost::tokenizer<boost::char_separator<char> > tokens(line,sep2);
 
-    tokenizer<char_separator<char> >::iterator itField = tokens.begin();
-    itField++;//advance past header
+    boost::tokenizer<boost::char_separator<char> >::iterator itField = tokens.begin();
+    itField++; //advance past header
     //determine ASCII message type
     if (*itField=="SetAntennaLocation")//Response to "gal" (get antenna locations)
     {
       if (*++itField=="auto")//determine antenna location mode
       {
         good_antenna_locations=false;
-        cout<<"Antenna Locations set to AUTO\n";
+        std::cout << "Antenna Locations set to AUTO\n";
         //send correct antenna locations
       }
       else if (*itField=="manual")
       {
         
-        cout<<"Antenna Locations set to MANUAL\n";
+        std::cout << "Antenna Locations set to MANUAL\n";
         //check antenna location, resend only if necessary
         i=strtod((*++itField).c_str(),NULL);
-        cout<<"Checking location of antenna # "<<i<<":"<<endl;
+        std::cout << "Checking location of antenna # " << i << ":" << std::endl;
         if (i==1)
         {
-          cout<<"\tX coordinate:\n";
+          std::cout << "\tX coordinate:\n";
           //Check x coordinate
           f=strtod((*++itField).c_str(),NULL);    
-          cout<<"\t actual\t"<<f<<endl;
-          cout<<"\t desired\t"<<strtod(x1.c_str(),NULL)<<endl;
-          cout<<"\t Difference\t"<<abs(f-strtod(x1.c_str(),NULL))<<endl;
+          std::cout << "\t actual\t" << f << std::endl;
+          std::cout << "\t desired\t" << strtod(x1.c_str(),NULL)<< std::endl;
+          std::cout << "\t Difference\t" << abs(f-strtod(x1.c_str(),NULL))<< std::endl;
           if (abs(f-strtod(x1.c_str(),NULL))<.0001)
-            cout<<"MATCH!\n";
+            std::cout << "MATCH!\n";
           else
           {
             good_antenna_locations=false;
-            cout<<f<<"\t"<<strtod(x1.c_str(),NULL)<<"\n";
-            cout<<"MISMATCH!\n";
+            std::cout << f <<"\t"<<strtod(x1.c_str(),NULL) << "\n";
+            std::cout << "MISMATCH!\n";
           }
           //Check y coordinate
           f=strtod((*++itField).c_str(),NULL);
-          cout<<"\t actual\t"<<f<<endl;
-          cout<<"\t desired\t"<<strtod(y1.c_str(),NULL)<<endl;
-          cout<<"\t Difference\t"<<abs(f-strtod(y1.c_str(),NULL))<<endl;
+          std::cout << "\t actual\t" << f << std::endl;
+          std::cout << "\t desired\t" << strtod(y1.c_str(),NULL) << std::endl;
+          std::cout << "\t Difference\t" << abs(f-strtod(y1.c_str(),NULL)) << std::endl;
           if (abs(f-strtod(y1.c_str(),NULL))<.0001)
-            cout<<"MATCH!\n";
+            std::cout << "MATCH!\n";
           else
           {
             good_antenna_locations=false;
-            cout<<f<<"\t"<<strtod(y1.c_str(),NULL)<<"\n";
-            cout<<"MISMATCH!\n";
+            std::cout << f <<"\t" << strtod(y1.c_str(),NULL) << "\n";
+            std::cout << "MISMATCH!\n";
           }
           //Check z coordinate
           f=strtod((*++itField).c_str(),NULL);
-          cout<<"\t actual\t"<<f<<endl;
-          cout<<"\t desired\t"<<strtod(z1.c_str(),NULL)<<endl;
-          cout<<"\t Difference\t"<<abs(f-strtod(z1.c_str(),NULL))<<endl;
+          std::cout << "\t actual\t" << f << std::endl;
+          std::cout << "\t desired\t" << strtod(z1.c_str(),NULL) << std::endl;
+          std::cout << "\t Difference\t" << abs(f-strtod(z1.c_str(),NULL)) << std::endl;
           if (abs(f-strtod(z1.c_str(),NULL))<.0001)
-            cout<<"MATCH!\n";
+            std::cout << "MATCH!\n";
           else
           {
             good_antenna_locations=false;
-            cout<<f<<"\t"<<strtod(z1.c_str(),NULL)<<"\n";
-            cout<<"MISMATCH!\n";
+            std::cout << f << "\t" <<strtod(z1.c_str(),NULL) << "\n";
+            std::cout << "MISMATCH!\n ";
           }
-        }
-        else if (i==2)
-        {
-          cout<<"\tX coordinate:\n";
+        } else if (i==2) {
+          std::cout << "\tX coordinate:\n";
           //Check x coordinate
-          f=strtod((*++itField).c_str(),NULL);
-          cout<<"\t actual\t"<<f<<endl;
-          cout<<"\t desired\t"<<strtod(x2.c_str(),NULL)<<endl;
-          cout<<"\t Difference\t"<<abs(f-strtod(x2.c_str(),NULL))<<endl;
-          if (abs(f-strtod(x2.c_str(),NULL))<.0001)
-            cout<<"MATCH!\n";
-          else
-          {
-            good_antenna_locations=false;
-            cout<<f<<"\t"<<strtod(x2.c_str(),NULL)<<"\n";
-            cout<<"MISMATCH!\n";
+          f = strtod((*++itField).c_str(),NULL);
+          std::cout << "\t actual\t" << f << std::endl;
+          std::cout << "\t desired\t" << strtod(x2.c_str(),NULL) << std::endl;
+          std::cout << "\t Difference\t" << abs(f-strtod(x2.c_str(),NULL)) << std::endl;
+          if (abs(f-strtod(x2.c_str(),NULL))<.0001) {
+            std::cout << "MATCH!\n";
+          } else {
+            good_antenna_locations = false;
+            std::cout << f <<"\t" << strtod(x2.c_str(),NULL) <<"\n";
+            std::cout << "MISMATCH!\n";
           }
           //Check y coordinate
-          f=strtod((*++itField).c_str(),NULL);
-          cout<<"\t actual\t"<<f<<endl;
-          cout<<"\t desired\t"<<strtod(y2.c_str(),NULL)<<endl;
-          cout<<"\t Difference\t"<<abs(f-strtod(y2.c_str(),NULL))<<endl;
-          if (abs(f-strtod(y2.c_str(),NULL))<.0001)
-            cout<<"MATCH!\n";
-          else
-          {
+          f = strtod((*++itField).c_str(),NULL);
+          std::cout << "\t actual\t" << f << std::endl;
+          std::cout << "\t desired\t" << strtod(y2.c_str(),NULL) << std::endl;
+          std::cout << "\t Difference\t" << abs(f-strtod(y2.c_str(),NULL))<< std::endl;
+          if (abs(f-strtod(y2.c_str(),NULL))<.0001) {
+            std::cout << "MATCH!\n";
+          } else {
             good_antenna_locations=false;
-            cout<<f<<"\t"<<strtod(y2.c_str(),NULL)<<"\n";
-            cout<<"MISMATCH!\n";
+            std::cout << f << "\t" << strtod(y2.c_str(),NULL) << "\n";
+            std::cout << "MISMATCH!\n";
           }
           //Check z coordinate
           f=strtod((*++itField).c_str(),NULL);
-          cout<<"\t actual\t"<<f<<endl;
-          cout<<"\t desired\t"<<strtod(z2.c_str(),NULL)<<endl;
-          cout<<"\t Difference\t"<<abs(f-strtod(z2.c_str(),NULL))<<endl;
+          std::cout << "\t actual\t" << f << std::endl;
+          std::cout << "\t desired\t" << strtod(z2.c_str(),NULL) << std::endl;
+          std::cout << "\t Difference\t" << abs(f-strtod(z2.c_str(),NULL)) << std::endl;
           if (abs(f-strtod(z2.c_str(),NULL))<.0001)
-            cout<<"MATCH!\n";
+            std::cout << "MATCH!\n";
           else {
             good_antenna_locations=false;
-            cout<<f<<"\t"<<strtod(z2.c_str(),NULL)<<"\n";
-            cout<<"MISMATCH!\n";
+            std::cout << f <<"\t" << strtod(z2.c_str(),NULL) << "\n";
+            std::cout << "MISMATCH!\n";
           }
         }
         //POST RESULT TO DATABASE!!!
-        PublishToDatabase("zAntennaLocations",block2, blockTime);
-        PublishToDatabase("zAntennaLocationsMatch",good_antenna_locations, blockTime);
-      }
-      else
-      {
-        cout<<"else\n";
-        cout<<*itField<<"#"<<endl;    
+        // PublishData("zAntennaLocations",block2, blockTime);
+        // PublishData("zAntennaLocationsMatch",good_antenna_locations, blockTime);
+      } else {
+        std::cout << "else\n";
+        std::cout << *itField<<"#"<< std::endl;    
       }
     }
   }
-  cout<<"\nASCII MESSAGE!!!\n";
+  std::cout << "\nASCII MESSAGE!!!\n";
   //cout<<block;
 }
-void Septentrio::ParseBlock(unsigned char* block, unsigned short ID)
+void Septentrio::ParseBinary(unsigned char* block, unsigned short ID)
 {
-  //MOOSTrace("Received ID: %i \r\n",ID);
-  double blockTime=MOOSTime();
-  switch(ID)
-  {
-    case 5914: // Reciever time (Current GPS and UTC time)
-      if(display_messages==1){
-        cout << "Received ReceiverTime Block" << endl;
-      }
-      memcpy(&latest_receivertime,block+8,sizeof(latest_receivertime));
+  switch(ID) {
+    // Reciever time (Current GPS and UTC time)
+    case 5914:
+      memcpy(&latest_receivertime, block+8, sizeof(latest_receivertime));
+      receiver_time_callback(latest_receivertime, read_timestamp);
       break;
-    case 5903: // Postion and velocity in XYZ
-      if(display_messages==1){
-        cout << "Received PVTCartesian Block" << endl;
-      }
-      memcpy(&latest_pvtxyz,block+8,sizeof(latest_pvtxyz));
-      PublishToDatabase("zGPSSeconds_PVT",latest_pvtxyz.GPS_ms,        blockTime);
-      PublishToDatabase("zGPSWeek_PVT",   latest_pvtxyz.weekNumber,    blockTime);
-      PublishToDatabase("zNumSats_PVT",   latest_pvtxyz.numSat,        blockTime);
 
-      if(latest_pvtxyz.x_position!=-2e10){
-        PublishToDatabase("zECEF_X",    stringUtils::precise_to_string(latest_pvtxyz.x_position,10),    blockTime);
-      }
-      if(latest_pvtxyz.y_position!=-2e10){
-        PublishToDatabase("zECEF_Y",    stringUtils::precise_to_string(latest_pvtxyz.y_position,10),    blockTime);
-      }
-      if(latest_pvtxyz.z_position!=-2e10){
-        PublishToDatabase("zECEF_Z",    stringUtils::precise_to_string(latest_pvtxyz.z_position,10),    blockTime);
-      }
-      if(latest_pvtxyz.x_velocity!=-2e10){
-        PublishToDatabase("zECEF_VX",   latest_pvtxyz.x_velocity,    blockTime);
-      }
-      if(latest_pvtxyz.y_velocity!=-2e10){
-        PublishToDatabase("zECEF_VY",   latest_pvtxyz.y_velocity,    blockTime);
-      }
-      if(latest_pvtxyz.z_velocity!=-2e10){
-        PublishToDatabase("zECEF_VZ",   latest_pvtxyz.z_velocity,    blockTime);
-      }
-      if(latest_pvtxyz.course!=-2e10){
-        PublishToDatabase("zCourse",    latest_pvtxyz.course*PI/180, blockTime);
-      }
-      if(latest_pvtxyz.MeanCorrAge!=65535){
-        PublishToDatabase("zDiffAge",   latest_pvtxyz.MeanCorrAge,   blockTime);
-      }
-      PublishToDatabase("zError_PVT", latest_pvtxyz.Error,         blockTime);
-      PublishToDatabase("zMode_PVT",  latest_pvtxyz.Mode,          blockTime);
+    // Postion and velocity in XYZ
+    case 5903:
+      SEP_PVTXYZ latest_pvtxyz;
+      memcpy(&latest_pvtxyz, block+8, sizeof(latest_pvtxyz));
+      pvt_cartesian_callback(latest_pvtxyz, read_timestamp);
       break;
-    case 5905: // Position Covariance block
-      if(display_messages==1){
-        cout << "Received PosCovCartesian Block" << endl;
-      }
-      memcpy(&latest_pvtxyz_pos_cov,block+8,sizeof(latest_pvtxyz_pos_cov));
-      PublishToDatabase("zGPSSeconds_Pos_Cov",    latest_pvtxyz_pos_cov.GPS_ms,         blockTime);
 
-      if(latest_pvtxyz_pos_cov.Cov_xx!=-2e10){
-        PublishToDatabase("zECEF_X_Var",    latest_pvtxyz_pos_cov.Cov_xx,    blockTime);
-      }
-      if(latest_pvtxyz_pos_cov.Cov_yy!=-2e10){
-        PublishToDatabase("zECEF_Y_Var",    latest_pvtxyz_pos_cov.Cov_yy,    blockTime);
-      }
-      if(latest_pvtxyz_pos_cov.Cov_zz!=-2e10){
-        PublishToDatabase("zECEF_Z_Var",    latest_pvtxyz_pos_cov.Cov_zz,    blockTime);
-      }
-      
+    // Position Covariance block
+    case 5905:
+      SEP_PVTXYZ_POS_COV latest_pvtxyz_pos_cov;
+      memcpy(&latest_pvtxyz_pos_cov, block+8, sizeof(latest_pvtxyz_pos_cov));
+      pos_cov_cartesian_callback(latest_pvtxyz_pos_cov, read_timestamp);
       break;
-    case 5907: // Velocity Covariance block
-      if(display_messages==1){
-        cout << "Received VelCovCartesian Block" << endl;
-      }
-      memcpy(&latest_pvtxyz_vel_cov,block+8,sizeof(latest_pvtxyz_vel_cov));
-      PublishToDatabase("zGPSSeconds_Vel_Cov",    latest_pvtxyz_vel_cov.GPS_ms,         blockTime);
 
-      if(latest_pvtxyz_vel_cov.Cov_VxVx!=-2e10){
-        PublishToDatabase("zECEF_VX_Var",   latest_pvtxyz_vel_cov.Cov_VxVx,    blockTime);
-      }
-      if(latest_pvtxyz_vel_cov.Cov_VyVy!=-2e10){
-        PublishToDatabase("zECEF_VY_Var",   latest_pvtxyz_vel_cov.Cov_VyVy,    blockTime);
-      }
-      if(latest_pvtxyz_vel_cov.Cov_VzVz!=-2e10){
-        PublishToDatabase("zECEF_VZ_Var",   latest_pvtxyz_vel_cov.Cov_VzVz,    blockTime);
-      }
-      
+    // Velocity Covariance block
+    case 5907:
+      SEP_PVTXYZ_VEL_COV latest_pvtxyz_vel_cov;
+      memcpy(&latest_pvtxyz_vel_cov, block+8, sizeof(latest_pvtxyz_vel_cov));
+      vel_cov_cartesian_callback(latest_pvtxyz_vel_cov, read_timestamp);
       break;
-    case 5938: // Attitude expressed as Euler Angle
-      if(display_messages==1){
-        cout << "Received AttitudeEuler Block" << endl;
-      }
-      memcpy(&latest_atteuler,block+8,sizeof(latest_atteuler));
-      PublishToDatabase("zGPSSeconds_ATT",latest_atteuler.GPS_ms,         blockTime);
-      PublishToDatabase("zGPSWeek_ATT",   latest_atteuler.weekNumber,     blockTime);
-      PublishToDatabase("zNumSats_ATT",   latest_atteuler.numSat,         blockTime);
 
-      if(latest_atteuler.heading!=-2e10){
-        PublishToDatabase("zYaw",       latest_atteuler.heading*PI/180, blockTime);
-      }
-      if(latest_atteuler.pitch!=-2e10){
-        PublishToDatabase("zPitch",     latest_atteuler.pitch  *PI/180, blockTime);
-      }
-      if(latest_atteuler.roll!=-2e10){
-        PublishToDatabase("zRoll",      latest_atteuler.roll   *PI/180, blockTime);
-      }
-      PublishToDatabase("zError_ATT", latest_atteuler.error,          blockTime);
-      PublishToDatabase("zMode_ATT",  latest_atteuler.mode,           blockTime);
-
+    // Attitude expressed as Euler Angle 
+    case 5938: 
+      SEP_ATTEULER latest_atteuler;
+      memcpy(&latest_atteuler, block+8, sizeof(latest_atteuler));
+      attitude_euler_callback(latest_atteuler, read_timestamp);
       break;
-    case 5939: //Attitude covariance (cross terms not currently given)
-      if(display_messages==1){
-        cout << "Received AttitudeCovEuler Block" << endl;
-      }
-      memcpy(&latest_atteuler_cov,block+8,sizeof(latest_atteuler_cov));
-      PublishToDatabase("zGPSSeconds_ATT_Cov",latest_atteuler_cov.GPS_ms,         blockTime);
 
-      //these are published rad^2 (converted from deg^2)
-      if(latest_atteuler_cov.var_heading!=-2e10){
-        PublishToDatabase("zYaw_Var",   latest_atteuler_cov.var_heading *(PI/180)*(PI/180), blockTime);
-      }
-      if(latest_atteuler_cov.var_pitch!=-2e10){
-        PublishToDatabase("zPitch_Var", latest_atteuler_cov.var_pitch   *(PI/180)*(PI/180), blockTime);
-      }
-      if(latest_atteuler_cov.var_roll!=-2e10){
-        PublishToDatabase("zRoll_Var",  latest_atteuler_cov.var_roll    *(PI/180)*(PI/180), blockTime);
-      }
-      
+    //Attitude covariance (cross terms not currently given)
+    case 5939:
+      SEP_ATTEULER_COV latest_atteuler_cov;
+      memcpy(&latest_atteuler_cov, block+8, sizeof(latest_atteuler_cov));
+      attitude_cov_euler_callback(latest_atteuler_cov, read_timestamp);
       break;
-    case 5889: //Range (MeasEpoch)
-      if(display_messages==1){
-        cout << "Received MeasEpoch Block" << endl;
-      }
-      update_range(block, blockTime);
 
-      break;
-    case 5891: //Ephemeris (GPSVav)
-      memcpy(&latest_ephemeris,block+8,sizeof(latest_ephemeris));
-      if(display_messages==1){
-        cout << "Received GPSNav Block for SV" << (unsigned int)latest_ephemeris.PRN << endl;
-      }
-      update_ephemeris(blockTime);
+    // //Range (MeasEpoch)
+    // case 5889:
+    //   update_range(block, blockTime);
 
+    //   break;
+
+    // //Ephemeris (GPSVav)
+    // case 5891:
+    //   SEP_EPHEMERIS latest_ephemeris;
+    //   memcpy(&latest_ephemeris, block+8, sizeof(latest_ephemeris));
+    //   update_ephemeris(blockTime);
+    //   break;
   }
 }
 
 
-void Septentrio::update_ephemeris(double &blockTime){
+// void Septentrio::update_ephemeris(double &blockTime){
 
-  double ephems[22];
-  ephems[0] = (unsigned int)latest_ephemeris.PRN;
-  ephems[1] = latest_ephemeris.t_oe;
-  ephems[2] = latest_ephemeris.SQRT_A;
-  ephems[3] = latest_ephemeris.DELTA_N;
-  ephems[4] = latest_ephemeris.M_0;
-  ephems[5] = latest_ephemeris.e;
-  ephems[6] = latest_ephemeris.omega;
-  ephems[7] = latest_ephemeris.C_uc;
-  ephems[8] = latest_ephemeris.C_us;
-  ephems[9] = latest_ephemeris.C_rc;
-  ephems[10] = latest_ephemeris.C_rs;
-  ephems[11] = latest_ephemeris.C_ic;
-  ephems[12] = latest_ephemeris.C_is;
-  ephems[13] = latest_ephemeris.i_0;
-  ephems[14] = latest_ephemeris.IDOT;
-  ephems[15] = latest_ephemeris.OMEGA_0;
-  ephems[16] = latest_ephemeris.OMEGADOT;
-  ephems[17] = latest_ephemeris.t_oc;
-  ephems[18] = latest_ephemeris.T_gd;
-  ephems[19] = latest_ephemeris.a_f0;
-  ephems[20] = latest_ephemeris.a_f1;
-  ephems[21] = latest_ephemeris.a_f2; 
+//   double ephems[22];
+//   ephems[0] = (unsigned int)latest_ephemeris.PRN;
+//   ephems[1] = latest_ephemeris.t_oe;
+//   ephems[2] = latest_ephemeris.SQRT_A;
+//   ephems[3] = latest_ephemeris.DELTA_N;
+//   ephems[4] = latest_ephemeris.M_0;
+//   ephems[5] = latest_ephemeris.e;
+//   ephems[6] = latest_ephemeris.omega;
+//   ephems[7] = latest_ephemeris.C_uc;
+//   ephems[8] = latest_ephemeris.C_us;
+//   ephems[9] = latest_ephemeris.C_rc;
+//   ephems[10] = latest_ephemeris.C_rs;
+//   ephems[11] = latest_ephemeris.C_ic;
+//   ephems[12] = latest_ephemeris.C_is;
+//   ephems[13] = latest_ephemeris.i_0;
+//   ephems[14] = latest_ephemeris.IDOT;
+//   ephems[15] = latest_ephemeris.OMEGA_0;
+//   ephems[16] = latest_ephemeris.OMEGADOT;
+//   ephems[17] = latest_ephemeris.t_oc;
+//   ephems[18] = latest_ephemeris.T_gd;
+//   ephems[19] = latest_ephemeris.a_f0;
+//   ephems[20] = latest_ephemeris.a_f1;
+//   ephems[21] = latest_ephemeris.a_f2; 
 
-  std::string VarName="zEphem"+stringUtils::to_string((unsigned int)latest_ephemeris.PRN);
-  //PublishToDatabase("zGPSSeconds",latest_ephemeris.GPS_ms,         blockTime);
-  PublishToDatabase(VarName,     stringUtils::precise_to_string(ephems,22,16), blockTime);
+//   std::string VarName="zEphem"+stringUtils::to_string((unsigned int)latest_ephemeris.PRN);
 
-}
-void Septentrio::update_range(unsigned char* block, double &blockTime){
+// }
+// void Septentrio::update_range(unsigned char* block, double &blockTime){
 
-  int number_observations_1=0;
-  int number_observations_2=0;
-  int number_observations_3=0;
+//   SEP_RANGE_HEADING latest_range_heading;
+//   SEP_RANGE_SUB_BLOCK latest_range_sub_block;
+//   RANGE_DATA latest_range_data;
 
-  int i=0;
-  int byte_track=0;
-  unsigned int antenna;
+//   int number_observations_1=0;
+//   int number_observations_2=0;
+//   int number_observations_3=0;
+
+//   int i=0;
+//   int byte_track=0;
+//   unsigned int antenna;
   
-  memcpy(&latest_range_heading,block+8,sizeof(latest_range_heading));
+//   memcpy(&latest_range_heading,block+8,sizeof(latest_range_heading));
 
-  while(i<(unsigned int)latest_range_heading.N)
-  {
-    memcpy(&latest_range_sub_block,block+(byte_track+16),sizeof(latest_range_sub_block));
-    antenna=(unsigned int)latest_range_sub_block.Flags.antennaID;
+//   while(i<(unsigned int)latest_range_heading.N)
+//   {
+//     memcpy(&latest_range_sub_block,block+(byte_track+16),sizeof(latest_range_sub_block));
+//     antenna=(unsigned int)latest_range_sub_block.Flags.antennaID;
 
-    switch(antenna){
-      case 1:
-        latest_range_data.SVID_1[number_observations_1]= (unsigned int)latest_range_sub_block.SVID;
-        latest_range_data.CACode_1[number_observations_1]= (double)latest_range_sub_block.CACode;
-        //latest_range_data.P1_CACode_1[number_observations_1]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P1_CACode;
-        //latest_range_data.P2_CACode_1[number_observations_1]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P2_CACode;
-        latest_range_data.L1Phase_1[number_observations_1]= (double)latest_range_sub_block.L1Phase;
-        //latest_range_data.L2Phase_1[number_observations_1]= (double)latest_range_sub_block.L2Phase;
-        latest_range_data.L1Doppler_1[number_observations_1]= (double)latest_range_sub_block.L1Doppler * .0001;
-        //latest_range_data.L2Doppler_1[number_observations_1]= (double)latest_range_sub_block.L2Doppler * .0001;
-        latest_range_data.CAC2N_1[number_observations_1]= (signed int)latest_range_sub_block.CACN0 * .1;
-        //latest_range_data.P1C2N_1[number_observations_1]= (signed int)latest_range_sub_block.P1CN0 * .1;
-        //latest_range_data.P2C2N_1[number_observations_1]= (signed int)latest_range_sub_block.P2CN0 * .1;
-        number_observations_1=number_observations_1+1;
+//     switch(antenna){
+//       case 1:
+//         latest_range_data.SVID_1[number_observations_1]= (unsigned int)latest_range_sub_block.SVID;
+//         latest_range_data.CACode_1[number_observations_1]= (double)latest_range_sub_block.CACode;
+//         //latest_range_data.P1_CACode_1[number_observations_1]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P1_CACode;
+//         //latest_range_data.P2_CACode_1[number_observations_1]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P2_CACode;
+//         latest_range_data.L1Phase_1[number_observations_1]= (double)latest_range_sub_block.L1Phase;
+//         //latest_range_data.L2Phase_1[number_observations_1]= (double)latest_range_sub_block.L2Phase;
+//         latest_range_data.L1Doppler_1[number_observations_1]= (double)latest_range_sub_block.L1Doppler * .0001;
+//         //latest_range_data.L2Doppler_1[number_observations_1]= (double)latest_range_sub_block.L2Doppler * .0001;
+//         latest_range_data.CAC2N_1[number_observations_1]= (signed int)latest_range_sub_block.CACN0 * .1;
+//         //latest_range_data.P1C2N_1[number_observations_1]= (signed int)latest_range_sub_block.P1CN0 * .1;
+//         //latest_range_data.P2C2N_1[number_observations_1]= (signed int)latest_range_sub_block.P2CN0 * .1;
+//         number_observations_1=number_observations_1+1;
 
-        break;
-      case 2:
+//         break;
+//       case 2:
         
-        latest_range_data.SVID_2[number_observations_2]= (unsigned int)latest_range_sub_block.SVID;
-        latest_range_data.CACode_2[number_observations_2]= (double)latest_range_sub_block.CACode;
-        //latest_range_data.P1_CACode_2[number_observations_2]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P1_CACode;
-        //latest_range_data.P2_CACode_2[number_observations_2]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P2_CACode;
-        latest_range_data.L1Phase_2[number_observations_2]= (double)latest_range_sub_block.L1Phase;
-        //latest_range_data.L2Phase_2[number_observations_2]= (double)latest_range_sub_block.L2Phase;
-        latest_range_data.L1Doppler_2[number_observations_2]= (double)latest_range_sub_block.L1Doppler * .0001;
-        //latest_range_data.L2Doppler_2[number_observations_2]= (double)latest_range_sub_block.L2Doppler * .0001;
-        latest_range_data.CAC2N_2[number_observations_2]= (signed int)latest_range_sub_block.CACN0 * .1;
-        //latest_range_data.P1C2N_2[number_observations_2]= (signed int)latest_range_sub_block.P1CN0 * .1;
-        //latest_range_data.P2C2N_2[number_observations_2]= (signed int)latest_range_sub_block.P2CN0 * .1;
-        number_observations_2=number_observations_2+1;
+//         latest_range_data.SVID_2[number_observations_2]= (unsigned int)latest_range_sub_block.SVID;
+//         latest_range_data.CACode_2[number_observations_2]= (double)latest_range_sub_block.CACode;
+//         //latest_range_data.P1_CACode_2[number_observations_2]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P1_CACode;
+//         //latest_range_data.P2_CACode_2[number_observations_2]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P2_CACode;
+//         latest_range_data.L1Phase_2[number_observations_2]= (double)latest_range_sub_block.L1Phase;
+//         //latest_range_data.L2Phase_2[number_observations_2]= (double)latest_range_sub_block.L2Phase;
+//         latest_range_data.L1Doppler_2[number_observations_2]= (double)latest_range_sub_block.L1Doppler * .0001;
+//         //latest_range_data.L2Doppler_2[number_observations_2]= (double)latest_range_sub_block.L2Doppler * .0001;
+//         latest_range_data.CAC2N_2[number_observations_2]= (signed int)latest_range_sub_block.CACN0 * .1;
+//         //latest_range_data.P1C2N_2[number_observations_2]= (signed int)latest_range_sub_block.P1CN0 * .1;
+//         //latest_range_data.P2C2N_2[number_observations_2]= (signed int)latest_range_sub_block.P2CN0 * .1;
+//         number_observations_2=number_observations_2+1;
 
-        break;
-      case 3:
-        latest_range_data.SVID_3[number_observations_3]= (unsigned int)latest_range_sub_block.SVID;
-        latest_range_data.CACode_3[number_observations_3]= (double)latest_range_sub_block.CACode;
-        //latest_range_data.P1_CACode_3[number_observations_3]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P1_CACode;
-        //latest_range_data.P2_CACode_3[number_observations_3]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P2_CACode;
-        latest_range_data.L1Phase_3[number_observations_3]= (double)latest_range_sub_block.L1Phase;
-        //latest_range_data.L2Phase_3[number_observations_3]= (double)latest_range_sub_block.L2Phase;
-        latest_range_data.L1Doppler_3[number_observations_3]= (double)latest_range_sub_block.L1Doppler * .0001;
-        //latest_range_data.L2Doppler_3[number_observations_3]= (double)latest_range_sub_block.L2Doppler * .0001;
-        latest_range_data.CAC2N_3[number_observations_3]= (signed int)latest_range_sub_block.CACN0 * .1;
-        //latest_range_data.P1C2N_3[number_observations_3]= (signed int)latest_range_sub_block.P1CN0 * .1;
-        //latest_range_data.P2C2N_3[number_observations_3]= (signed int)latest_range_sub_block.P2CN0 * .1;
-        number_observations_3=number_observations_3+1;
-    }
+//         break;
+//       case 3:
+//         latest_range_data.SVID_3[number_observations_3]= (unsigned int)latest_range_sub_block.SVID;
+//         latest_range_data.CACode_3[number_observations_3]= (double)latest_range_sub_block.CACode;
+//         //latest_range_data.P1_CACode_3[number_observations_3]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P1_CACode;
+//         //latest_range_data.P2_CACode_3[number_observations_3]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P2_CACode;
+//         latest_range_data.L1Phase_3[number_observations_3]= (double)latest_range_sub_block.L1Phase;
+//         //latest_range_data.L2Phase_3[number_observations_3]= (double)latest_range_sub_block.L2Phase;
+//         latest_range_data.L1Doppler_3[number_observations_3]= (double)latest_range_sub_block.L1Doppler * .0001;
+//         //latest_range_data.L2Doppler_3[number_observations_3]= (double)latest_range_sub_block.L2Doppler * .0001;
+//         latest_range_data.CAC2N_3[number_observations_3]= (signed int)latest_range_sub_block.CACN0 * .1;
+//         //latest_range_data.P1C2N_3[number_observations_3]= (signed int)latest_range_sub_block.P1CN0 * .1;
+//         //latest_range_data.P2C2N_3[number_observations_3]= (signed int)latest_range_sub_block.P2CN0 * .1;
+//         number_observations_3=number_observations_3+1;
+//     }
 
-    i=i+1;
-    byte_track=byte_track+(unsigned int)latest_range_heading.SBLength;
-  }
+//     i=i+1;
+//     byte_track=byte_track+(unsigned int)latest_range_heading.SBLength;
+//   }
 
-  PublishToDatabase("zGPSSeconds_Range",latest_range_heading.GPS_ms,        blockTime);
-  PublishToDatabase("zGPSWeek_Range",   latest_range_heading.weekNumber,    blockTime);
-  PublishToDatabase("zNumObservations1",number_observations_1,              blockTime);
-  PublishToDatabase("zNumObservations2",number_observations_2,              blockTime);
-  PublishToDatabase("zNumObservations3",number_observations_3,              blockTime);
+  // do something with it here.
+
+// }
 
 
-  PublishToDatabase("zSVID_1",  stringUtils::to_string(latest_range_data.SVID_1,number_observations_1), blockTime);
-  PublishToDatabase("zCACode_1",  stringUtils::precise_to_string(latest_range_data.CACode_1,number_observations_1,12), blockTime);
-  //PublishToDatabase("zP1_CACode_1",  stringUtils::precise_to_string(latest_range_data.P1_CACode_1,number_observations_1,12), blockTime);
-  //PublishToDatabase("zP2_CACode_1",  stringUtils::precise_to_string(latest_range_data.P2_CACode_1,number_observations_1,12), blockTime);
-  PublishToDatabase("zL1Phase_1",  stringUtils::precise_to_string(latest_range_data.L1Phase_1,number_observations_1,14), blockTime);
-  //PublishToDatabase("zL2Phase_1",  stringUtils::precise_to_string(latest_range_data.L2Phase_1,number_observations_1,14), blockTime);
-  PublishToDatabase("zL1Doppler_1",  stringUtils::precise_to_string(latest_range_data.L1Doppler_1,number_observations_1,10), blockTime);
-  //PublishToDatabase("zL2Doppler_1",  stringUtils::precise_to_string(latest_range_data.L2Doppler_1,number_observations_1,10), blockTime);
-  PublishToDatabase("zCAC2N_1",  stringUtils::precise_to_string(latest_range_data.CAC2N_1,number_observations_1,5), blockTime);
-  //PublishToDatabase("zP1C2N_1",  stringUtils::precise_to_string(latest_range_data.P1C2N_1,number_observations_1,5), blockTime);
-  //PublishToDatabase("zP2C2N_1",  stringUtils::precise_to_string(latest_range_data.P2C2N_1,number_observations_1,5), blockTime);
-
-  PublishToDatabase("zSVID_2",  stringUtils::to_string(latest_range_data.SVID_2,number_observations_2), blockTime);
-  PublishToDatabase("zCACode_2",  stringUtils::precise_to_string(latest_range_data.CACode_2,number_observations_2,12), blockTime);
-  //PublishToDatabase("zP1_CACode_2",  stringUtils::precise_to_string(latest_range_data.P1_CACode_2,number_observations_2,12), blockTime);
-  //PublishToDatabase("zP2_CACode_2",  stringUtils::precise_to_string(latest_range_data.P2_CACode_2,number_observations_2,12), blockTime);
-  PublishToDatabase("zL1Phase_2",  stringUtils::precise_to_string(latest_range_data.L1Phase_2,number_observations_2,14), blockTime);
-  //PublishToDatabase("zL2Phase_2",  stringUtils::precise_to_string(latest_range_data.L2Phase_2,number_observations_2,14), blockTime);
-  PublishToDatabase("zL1Doppler_2",  stringUtils::precise_to_string(latest_range_data.L1Doppler_2,number_observations_2,10), blockTime);
-  //PublishToDatabase("zL2Doppler_2",  stringUtils::precise_to_string(latest_range_data.L2Doppler_2,number_observations_2,10), blockTime);
-  PublishToDatabase("zCAC2N_2",  stringUtils::precise_to_string(latest_range_data.CAC2N_2,number_observations_2,5), blockTime);
-  //PublishToDatabase("zP1C2N_2",  stringUtils::precise_to_string(latest_range_data.P1C2N_2,number_observations_2,5), blockTime);
-  //PublishToDatabase("zP2C2N_2",  stringUtils::precise_to_string(latest_range_data.P2C2N_2,number_observations_2,5), blockTime);
-
-  PublishToDatabase("zSVID_3",  stringUtils::to_string(latest_range_data.SVID_3,number_observations_3), blockTime);
-  PublishToDatabase("zCACode_3",  stringUtils::precise_to_string(latest_range_data.CACode_3,number_observations_3,12), blockTime);
-  //PublishToDatabase("zP1_CACode_3",  stringUtils::precise_to_string(latest_range_data.P1_CACode_3,number_observations_3,12), blockTime);
-  //PublishToDatabase("zP2_CACode_3",  stringUtils::precise_to_string(latest_range_data.P2_CACode_3,number_observations_3,12), blockTime);
-  PublishToDatabase("zL1Phase_3",  stringUtils::precise_to_string(latest_range_data.L1Phase_3,number_observations_3,14), blockTime);
-  //PublishToDatabase("zL2Phase_3",  stringUtils::precise_to_string(latest_range_data.L2Phase_3,number_observations_3,14), blockTime);
-  PublishToDatabase("zL1Doppler_3",  stringUtils::precise_to_string(latest_range_data.L1Doppler_3,number_observations_3,10), blockTime);
-  //PublishToDatabase("zL2Doppler_3",  stringUtils::precise_to_string(latest_range_data.L2Doppler_3,number_observations_3,10), blockTime);
-  PublishToDatabase("zCAC2N_3",  stringUtils::precise_to_string(latest_range_data.CAC2N_3,number_observations_3,5), blockTime);
-  //PublishToDatabase("zP1C2N_3",  stringUtils::precise_to_string(latest_range_data.P1C2N_3,number_observations_3,5), blockTime);
-  //PublishToDatabase("zP2C2N_3",  stringUtils::precise_to_string(latest_range_data.P2C2N_3,number_observations_3,5), blockTime);
-
-}
 bool Septentrio::SetAntennaLocations(int ant_num, std::string x, std::string y, std::string z)
 {
 

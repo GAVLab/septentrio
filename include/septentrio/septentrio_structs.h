@@ -1,8 +1,8 @@
-#define MAX_MSG_SIZE 4096 //!< see header message length
-//#define PI 3.14159265
-
-// using namespace std;
-// using namespace boost;
+/*
+ * Structures into which Septenrio data is unpack then shipped to handler
+ * functions
+ *
+ */
 
 #pragma pack ( push , 1)
 struct SEP_FLAGS
@@ -17,6 +17,7 @@ struct SEP_FLAGS
     bool attitudeflag;
 };
 
+
 //structure for the header message
 struct SEP_HEADER
 {
@@ -26,6 +27,7 @@ struct SEP_HEADER
     unsigned short ID; //!< The ID is the "Block ID"
     unsigned short Length; //!< length of the entire message including the header. A multiple of 4 between 8 and 4096
 };
+
 
 //structure for the PVTCartesian parsed block 
 struct SEP_PVTXYZ //message 5903
@@ -51,6 +53,7 @@ struct SEP_PVTXYZ //message 5903
     float course; //Course over ground (degree)
 };
 
+
 //structure for the PosCovCartesian parsed block
 struct SEP_PVTXYZ_POS_COV//message 5905
 {
@@ -69,6 +72,7 @@ struct SEP_PVTXYZ_POS_COV//message 5905
     float Cov_yb; //covariance between the y and clock bias estimates
     float Cov_zb; //covariance between the z and clock bias estimates
 };
+
 
 //structure for the VelCovCaresian parsed block
 struct SEP_PVTXYZ_VEL_COV//message 5907
@@ -89,6 +93,7 @@ struct SEP_PVTXYZ_VEL_COV//message 5907
     float Cov_Vzd; //covariance between the z-velocity and clock drift estimates
 };
 
+
 //structure for the AttitudeEuler parsed block 
 struct SEP_ATTEULER //message 5938
 {
@@ -105,6 +110,8 @@ struct SEP_ATTEULER //message 5938
     float y_omega; //Angular rate in vehicle frame (deg/s)
     float z_omega; //Angular rate in vehicle frame (deg/s)
 };
+
+
 //structure for the AttitudeCovEuler parsed block
 struct SEP_ATTEULER_COV//message 5939
 {
@@ -116,6 +123,7 @@ struct SEP_ATTEULER_COV//message 5939
     float var_pitch;           //variance of pitch estiamte   deg^2 
     float var_roll;            //variance of roll estiamte    deg^2
 };
+
 
 //structure for the ReceiverTime parsed block
 struct SEP_RECEIVERTIME//message 5914
@@ -131,6 +139,7 @@ struct SEP_RECEIVERTIME//message 5914
     signed int deltaLS; //Integer second difference between GPS and UTC time Positive if GPS time is ahead of UTC. Set to -148 if not available
     unsigned char syncLevel; //Bit field indicating the synchronization level of the receiver time
 };
+
 
 //structure for the GPSNAV parsed block (GPS SV Ephemeris)
 struct SEP_EPHEMERIS//message 5891
@@ -174,6 +183,7 @@ struct SEP_EPHEMERIS//message 5891
     unsigned short WNt_oe;
 };
 
+
 //structure for the heading of the MeasEpoch block
 struct SEP_RANGE_HEADING//part of message 5889
 {//this section of the message is 8 bytes long
@@ -182,6 +192,8 @@ struct SEP_RANGE_HEADING//part of message 5889
     unsigned char N; //number of sub-blocks
     unsigned char SBLength; //number of bytes of each sub-frame
 };
+
+
 //structure for the MeasEpoch Flag
 struct SEP_RANGE_FLAG
 {
@@ -192,6 +204,8 @@ struct SEP_RANGE_FLAG
     unsigned multipath_mitigation: 1;
     unsigned antennaID: 3;
 };
+
+
 //structure for the sub-blocks of the MeasEpoch block
 struct SEP_RANGE_SUB_BLOCK//part of message 5889
 {
@@ -212,8 +226,8 @@ struct SEP_RANGE_SUB_BLOCK//part of message 5889
 
 };
 
-#pragma pack ( pop ) //See GavlabVehicleCode.pdf for explaination
 
+#pragma pack ( pop ) //See GavlabVehicleCode.pdf for explaination
 struct RANGE_DATA
 {
     int SVID_1[30];
@@ -253,6 +267,7 @@ struct RANGE_DATA
     double P2C2N_3[30];
 
 };
+
 
 /* CRCLookUp provided by Septenrio
  *(c) 2000-2004 Septentrio nv/sa, Belgium */
