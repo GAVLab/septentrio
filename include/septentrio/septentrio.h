@@ -15,6 +15,7 @@
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
 #include <boost/tokenizer.hpp>
+#include <boost/algorithm/string/join.hpp>
 
 #include <iomanip>
 #include <iostream>
@@ -26,12 +27,12 @@
 typedef boost::function<double()> GetTimeCallback;
 
 // gps data callbacks
-typedef boost::function<void(SEP_RECEIVERTIME&,   double&)> ReceiverTimeCallback;
-typedef boost::function<void(SEP_PVTXYZ&,         double&)> PvtCartestianCallback;
-typedef boost::function<void(SEP_PVTXYZ_POS_COV&, double&)> PosCovCartesianCallback;
-typedef boost::function<void(SEP_PVTXYZ_VEL_COV&, double&)> VelCovCaresianCallback;
-typedef boost::function<void(SEP_ATTEULER&,       double&)> AttitudeEulerCallback;
-typedef boost::function<void(SEP_ATTEULER_COV&,   double&)> AttitudeCovEulerCallback;
+typedef boost::function<void(ReceiverTime&,     double&)> ReceiverTimeCallback;
+typedef boost::function<void(PvtCartesian&,     double&)> PvtCartesianCallback;
+typedef boost::function<void(PosCovCartesian&,  double&)> PosCovCartesianCallback;
+typedef boost::function<void(VelCovCartesian&,  double&)> VelCovCaresianCallback;
+typedef boost::function<void(AttitudeEuler&,    double&)> AttitudeEulerCallback;
+typedef boost::function<void(AttitudeCovEuler&, double&)> AttitudeCovEulerCallback;
 
 // typedef boost::function<void(CfgPrt&, double&)> PortSettingsCallback;
 
@@ -47,7 +48,8 @@ class Septentrio {
     void disconnect();
     inline bool isConnected() {return is_connected;}
 
-    bool requestLog(std::string logcode_); //!< request the given Block from the receiver
+    bool clearLog(); //!< turn off logs
+    bool requestLog(std::string logcode_); //!< request an additional Block from the receiver
 
     /* Setters that replace mission file reader */
     bool setOutputRate(std::string r); //!< request the PVT log rate
@@ -55,12 +57,13 @@ class Septentrio {
     
     bool SetAntennaLocations(int ant_num, std::string x, std::string y, std::string z);
 
-    int block_ID;
-    //ofstream sep_file;
-    bool display_messages;
-    bool display;
-    bool check;
-    char sep_timestr[50];
+    /* callback setters */
+    inline void setReceiverTimeCallback(ReceiverTimeCallback c) {receiver_time_callback = c;};
+    inline void setPvtCartesianCallback(PvtCartesianCallback c) {pvt_cartesian_callback = c;};
+    inline void setPosCovCartesianCallback(PosCovCartesianCallback c) {pos_cov_cartesian_callback = c;};
+    inline void setVelCovCaresianCallback(VelCovCaresianCallback c) {vel_cov_cartesian_callback = c;};
+    inline void setAttitudeEulerCallback(AttitudeEulerCallback c) {attitude_euler_callback = c;};
+    inline void setAttitudeCovEulerCallback(AttitudeCovEulerCallback c) {attitude_cov_euler_callback = c;};
 
     /* Bullshit */
     // void display_sep_file(int block_ID);
@@ -75,9 +78,6 @@ class Septentrio {
     void stopReading();
     void readSerialPort();
 
-
-
-    // bool ConfigureLogging(string &sLogs);
     // bool RequestNMEACOM3(); // request NMEA message over COM3 on Septentrio
     // void SetRTK(string RTK_com,string RTK_baud,string RTK_correction_type);
     void bufferIncomingData(uint8_t * msg, size_t length); //!< data read from serial port is passed to this method
@@ -103,6 +103,7 @@ class Septentrio {
     /* basic connection attributes for septentrio */
     std::string output_rate;
     std::string range_output_rate;
+    std::vector<std::string> log_codes; // logs that we want
 
     //Buffer funcitons
     unsigned char dataBuf[MAX_MSG_SIZE]; //!<Holds incoming data; Buffer for incoming data
@@ -116,13 +117,13 @@ class Septentrio {
     bool good_antenna_locations;
 
     // stuff that gets stored for the parse function
-    SEP_HEADER latest_header;
-    SEP_RECEIVERTIME latest_receivertime;
+    Header latest_header;
+    ReceiverTime latest_receivertime;
 
     /* callback handlers */
     GetTimeCallback               time_handler;
     ReceiverTimeCallback          receiver_time_callback;
-    PvtCartestianCallback         pvt_cartesian_callback;
+    PvtCartesianCallback          pvt_cartesian_callback;
     PosCovCartesianCallback       pos_cov_cartesian_callback;
     VelCovCaresianCallback        vel_cov_cartesian_callback;
     AttitudeEulerCallback         attitude_euler_callback;

@@ -4,17 +4,21 @@ project(septentrio)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  serial
+find_package(catkin REQUIRED
+  COMPONENTS
+    roscpp
+    serial
+    std_msgs
+    message_generation
 )
 
 ## System dependencies are found with CMake's conventions
-find_package(Boost REQUIRED COMPONENTS
-  system 
-  filesystem 
-  thread
- )
+find_package(Boost REQUIRED
+  COMPONENTS
+    system 
+    filesystem 
+    thread
+)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -47,11 +51,10 @@ find_package(Boost REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  PvtCartesianMsg.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -68,10 +71,10 @@ find_package(Boost REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+  DEPENDENCIES
+    std_msgs  # Or other packages containing msgs
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -85,7 +88,7 @@ find_package(Boost REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES septentrio
-  CATKIN_DEPENDS roscpp serial
+  CATKIN_DEPENDS roscpp serial std_msgs
   DEPENDS system_lib
 )
 
@@ -115,13 +118,18 @@ target_link_libraries(septentrio
 )
 
 # ## Declare a cpp executable
-# add_executable(septentrio_node
-#   include/${PROJECT_NAME}/septentrio_node.h
-#   src/septentrio_node.cpp)
+add_executable(septentrio_node
+  # ${PROJECT_INCLUDE_DIRS}
+  include/${PROJECT_NAME}/septentrio_node.h
+  src/septentrio_node.cpp)
 
+target_link_libraries(septentrio_node
+  septentrio
+  ${catkin_LIBRARIES}
+)
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(septentrio_node septentrio_generate_messages_cpp)
+add_dependencies(septentrio_node septentrio_generate_messages_cpp)
 
 
 #############

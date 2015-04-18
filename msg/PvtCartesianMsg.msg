@@ -1,0 +1,21 @@
+Header header
+
+uint64 GPS_ms
+uint32 weekNumber
+uint8 numSat
+uint8 Error
+uint8 Mode
+uint8 System
+uint8 Info
+uint8 SBASprn
+float64 x_position
+float64 y_position
+float64 z_position
+float32 x_velocity
+float32 y_velocity
+float32 z_velocity
+float64 RxClkBias
+float32 RxClkDrift
+uint32 MeanCorrAge
+uint32 ReferenceID
+float32 course

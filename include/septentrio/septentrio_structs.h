@@ -19,7 +19,7 @@ struct SEP_FLAGS
 
 
 //structure for the header message
-struct SEP_HEADER
+struct Header
 {
     unsigned char SYNC1; //!< first sync byte is $ or 0x24
     unsigned char SYNC2; //!< 2nd sync byte is @ or 0x40
@@ -30,7 +30,7 @@ struct SEP_HEADER
 
 
 //structure for the PVTCartesian parsed block 
-struct SEP_PVTXYZ //message 5903
+struct PvtCartesian //message 5903
 {
     unsigned int GPS_ms; //Time tag of PVT fix in milliseconds of week, receiver time scale
     unsigned short weekNumber; //Week number
@@ -55,7 +55,7 @@ struct SEP_PVTXYZ //message 5903
 
 
 //structure for the PosCovCartesian parsed block
-struct SEP_PVTXYZ_POS_COV//message 5905
+struct PosCovCartesian//message 5905
 {
     unsigned int GPS_ms; //Time tag of PVT fix in milliseconds of week, receiver time scale
     unsigned short weekNumber; //Week number
@@ -75,7 +75,7 @@ struct SEP_PVTXYZ_POS_COV//message 5905
 
 
 //structure for the VelCovCaresian parsed block
-struct SEP_PVTXYZ_VEL_COV//message 5907
+struct VelCovCartesian//message 5907
 {
     unsigned int GPS_ms; //Time tag of PVT fix in milliseconds of week, receiver time scale
     unsigned short weekNumber; //Week number
@@ -95,7 +95,7 @@ struct SEP_PVTXYZ_VEL_COV//message 5907
 
 
 //structure for the AttitudeEuler parsed block 
-struct SEP_ATTEULER //message 5938
+struct AttitudeEuler //message 5938
 {
     unsigned int GPS_ms; //Time tag of attitude solution in milliseconds of week, receiver time scale
     unsigned short weekNumber; //Week number
@@ -113,7 +113,7 @@ struct SEP_ATTEULER //message 5938
 
 
 //structure for the AttitudeCovEuler parsed block
-struct SEP_ATTEULER_COV//message 5939
+struct AttitudeCovEuler//message 5939
 {
     unsigned int GPS_ms;       //Time tag of attitude solution in milliseconds of week, receiver time scale
     unsigned short weekNumber; //Week number
@@ -126,7 +126,7 @@ struct SEP_ATTEULER_COV//message 5939
 
 
 //structure for the ReceiverTime parsed block
-struct SEP_RECEIVERTIME//message 5914
+struct ReceiverTime//message 5914
 {
     unsigned int GPS_ms; //Time tag in milliseconds of week
     unsigned short weekNumber; //Week number
@@ -142,7 +142,7 @@ struct SEP_RECEIVERTIME//message 5914
 
 
 //structure for the GPSNAV parsed block (GPS SV Ephemeris)
-struct SEP_EPHEMERIS//message 5891
+struct Ephemeris//message 5891
 {
     unsigned int GPS_ms; //Time tag in milliseconds of week
     unsigned short weekNumber; //Week number
@@ -185,7 +185,7 @@ struct SEP_EPHEMERIS//message 5891
 
 
 //structure for the heading of the MeasEpoch block
-struct SEP_RANGE_HEADING//part of message 5889
+struct MeasEpoch//part of message 5889
 {//this section of the message is 8 bytes long
     unsigned int GPS_ms; //Time tag in milliseconds of week
     unsigned short weekNumber; //Week number
@@ -194,8 +194,8 @@ struct SEP_RANGE_HEADING//part of message 5889
 };
 
 
-//structure for the MeasEpoch Flag
-struct SEP_RANGE_FLAG
+//structure for the MeasEpochFlag
+struct MeasEpochFlag
 {
     unsigned L1_loss_of_lock: 1;
     unsigned L2_loos_of_lock: 1;
@@ -207,7 +207,7 @@ struct SEP_RANGE_FLAG
 
 
 //structure for the sub-blocks of the MeasEpoch block
-struct SEP_RANGE_SUB_BLOCK//part of message 5889
+struct MeasEpochSubBlock//part of message 5889
 {
     double CACode;
     float P1_CACode;
@@ -222,7 +222,7 @@ struct SEP_RANGE_SUB_BLOCK//part of message 5889
     unsigned char SVID;
     unsigned char RXChannel;
     float LockTime;
-    SEP_RANGE_FLAG Flags;
+    MeasEpochFlag Flags;
 
 };
 

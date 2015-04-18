@@ -14,33 +14,33 @@ double defaultGetTimeCallback() {
 }
 
 
-void defaultReceiverTimeCallback(SEP_RECEIVERTIME & data, double& cpu_stamp) {
-  std::cout << "Received SEP_RECEIVERTIME\n" << std::endl;
+void defaultReceiverTimeCallback(ReceiverTime& data, double& cpu_stamp) {
+  std::cout << "defaultReceiverTimeCallback: Received ReceiverTime" << std::endl;
 }
 
 
-void defaultPvtCartestianCallback(SEP_PVTXYZ & data, double& cpu_stamp) {
-  std::cout << "Received SEP_PVTXYZ\n" << std::endl;
+void defaultPvtCartesianCallback(PvtCartesian& data, double& cpu_stamp) {
+  std::cout << "defaultPvtCartesianCallback: Received PvtCartesian" << std::endl;
 }
 
 
-void defaultPosCovCartesianCallback(SEP_PVTXYZ_POS_COV & data, double& cpu_stamp) {
-  std::cout << "Received SEP_PVTXYZ_POS_COV\n" << std::endl;
+void defaultPosCovCartesianCallback(PosCovCartesian& data, double& cpu_stamp) {
+  std::cout << "defaultPosCovCartesianCallback: Received PosCovCartesian" << std::endl;
 }
 
 
-void defaultVelCovCaresianCallback(SEP_PVTXYZ_VEL_COV & data, double& cpu_stamp) {
-  std::cout << "Received SEP_PVTXYZ_VEL_COV\n" << std::endl;
+void defaultVelCovCartesianCallback(VelCovCartesian& data, double& cpu_stamp) {
+  std::cout << "defaultVelCovCaresianCallback: Received VelCovCartesian" << std::endl;
 }
 
 
-void defaultAttitudeEulerCallback(SEP_ATTEULER & data, double& cpu_stamp) {
-  std::cout << "Received SEP_ATTEULER\n" << std::endl;
+void defaultAttitudeEulerCallback(AttitudeEuler& data, double& cpu_stamp) {
+  std::cout << "defaultAttitudeEulerCallback: Received AttitudeEuler" << std::endl;
 }
 
 
-void defaultAttitudeCovEulerCallback(SEP_ATTEULER_COV & data, double& cpu_stamp) {
-  std::cout << "Received SEP_ATTEULER_COV\n" << std::endl;
+void defaultAttitudeCovEulerCallback(AttitudeCovEuler& data, double& cpu_stamp) {
+  std::cout << "defaultAttitudeCovEulerCallback: Received AttitudeCovEuler" << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -55,9 +55,9 @@ Septentrio::Septentrio()
 
   time_handler =                    defaultGetTimeCallback;
   receiver_time_callback =          defaultReceiverTimeCallback;
-  pvt_cartesian_callback =          defaultPvtCartestianCallback;
+  pvt_cartesian_callback =          defaultPvtCartesianCallback;
   pos_cov_cartesian_callback =      defaultPosCovCartesianCallback;
-  vel_cov_cartesian_callback =      defaultVelCovCaresianCallback;
+  vel_cov_cartesian_callback =      defaultVelCovCartesianCallback;
   attitude_euler_callback =         defaultAttitudeEulerCallback;
   attitude_cov_euler_callback =     defaultAttitudeCovEulerCallback;
   
@@ -147,6 +147,7 @@ bool Septentrio::connect(std::string port, int baudrate, std::string septentrio_
     }
 
     serial_port->flush();
+    clearLog(); // turn off all output
 
     // !!!!!!!!!!!!!
     // Assume that connection is successful
@@ -261,10 +262,19 @@ void Septentrio::readSerialPort() {
 // Septentrio specific stuff for logs
 /////////////////////////////////
 
+bool Septentrio::clearLog()
+{
+  log_codes.clear();
+  std::string cmd="SetSBFOutput " + septentrio_port + ", " + "\r\n";
+  return (serial_port->write(cmd)==cmd.length());
+}
 
 bool Septentrio::requestLog(std::string logcode_)
 {
-  std::string cmd="SetSBFOutput " + septentrio_port + ", " + logcode_ + "\r\n";
+  log_codes.push_back(logcode_);
+  std::string cmd = boost::algorithm::join(log_codes, "+");
+  cmd = "SetSBFOutput " + septentrio_port + ", " + cmd + "\r\n";
+  std::cout << "Septentrio::requestLog sending request for: " << cmd << std::endl;
   return (serial_port->write(cmd)==cmd.length());
 }
 
@@ -285,139 +295,6 @@ bool Septentrio::setRangeOutputRate(std::string r)
   //TODO: read block rate from mission file
   return (serial_port->write(cmd)==cmd.length());
 };
-
-//void gSeptentrio::display_sep_file(int block_ID)
-//{
-//    switch (block_ID)
-//    {
-//        case 5903: //PVTCartesian
-//            cout << "\n\nPVTCartesian:" << endl;
-//            cout << "TOW:  " << latest_pvtxyz_format.TOW << endl;
-//            cout << "WNc:  " << latest_pvtxyz_format.WNc << endl;
-//            cout << "NrSV:  " << latest_pvtxyz_format.NrSV << endl;
-//            cout << "Error:  " << latest_pvtxyz_format.Error << endl;
-//            cout << "Mode:  " << latest_pvtxyz_format.Mode << endl;
-//            cout << "System:  " << latest_pvtxyz_format.System << endl;
-//            cout << "Info:  " << latest_pvtxyz_format.Info << endl;
-//            cout << "SBASprn:  " << latest_pvtxyz_format.SBASprn << endl;
-//            cout << "x_position:  " << latest_pvtxyz_format.x_position << endl;
-//            cout << "y_position:  " << latest_pvtxyz_format.y_position << endl;
-//            cout << "z_position:  " << latest_pvtxyz_format.z_position << endl;
-//            cout << "x_velocity:  " << latest_pvtxyz_format.x_velocity << endl;
-//            cout << "y_velocity:  " << latest_pvtxyz_format.y_velocity << endl;
-//            cout << "z_velocity:  " << latest_pvtxyz_format.z_velocity << endl;
-//            cout << "RxClkBias:  " << latest_pvtxyz_format.RxClkBias << endl;
-//            cout << "RxClkDrift:  " << latest_pvtxyz_format.RxClkDrift << endl;
-//            cout << "MeanCorrAge:  " << latest_pvtxyz_format.MeanCorrAge << endl;
-//            cout << "RefrenceID:  " << latest_pvtxyz_format.ReferenceID << endl;
-//            cout << "COG:  " << latest_pvtxyz_format.COG << endl;
-//            break;
-//
-//        case 5938:  //AttEuler
-//            cout << "\n\nAttitudeEuler:" << endl;
-//            cout << "TOW:  " << latest_atteuler_format.TOW_b << endl;
-//            cout << "WNc:  " << latest_atteuler_format.WNc_b << endl;
-//            cout << "NrSV:  " << latest_atteuler_format.NrSV_b << endl;
-//            cout << "Error:  " << latest_atteuler_format.Error_b << endl;
-//            cout << "Mode:  " << latest_atteuler_format.Mode_b << endl;
-//            cout << "Heading:  " << latest_atteuler_format.Heading << endl;
-//            cout << "Pitch:  " << latest_atteuler_format.Pitch << endl;
-//            cout << "Roll:  " << latest_atteuler_format.Roll << endl;
-//            cout << "Omega x:  " << latest_atteuler_format.x_omega << endl;
-//            cout << "Omega Y:  " << latest_atteuler_format.y_omega << endl;
-//            cout << "Omega Z:  " << latest_atteuler_format.z_omega << endl;
-//            break;
-//    }
-//}
-
-
-// // Could not get CRC to work properly //
-// unsigned short Septentrio::ComputeCRC(char * buf, int buf_length)
-// {
-//       int  i;
-//       unsigned short  crc = 0;
-
-//        see for example the BINEX web site 
-//       for (i=0; i < buf_length; i++) {
-//             crc = (crc << 8) ^ CRCLookUp[ (crc >> 8) ^ buf[i] ];
-//       }
-
-//       return crc;
-// }
-
-
-// bool Septentrio::CRC_check(char *head, char *mess, int tot_length, int CRC)
-// {
-//     int j;
-//     int Calculate_CRC;
-//     char *CRC_message = new char[tot_length - 4];
-
-//     //** Have to merge two character arrays into one to calculate CRC **//
-//     for(j = 0; j <= 3 ; j++)
-//     {
-//         CRC_message[j] = head[j + 2];
-//     }
-
-//     for(j = 0; j <= tot_length - 8; j++)
-//     {
-//         CRC_message[j + 4] = mess[j];
-//     }
-
-//     Calculate_CRC = ComputeCRC(CRC_message, tot_length);
-
-//     if (Calculate_CRC == CRC)
-//     {
-//         return true;
-//     }
-//     else
-//     {
-//         return false;
-//     }
-//     delete [] CRC_message;
-
-// }
-
-
-// //probably want to change to generic selected COM port for NMEA output message
-// bool Septentrio::RequestNMEACOM3()
-// {
-//   string cmd="SetNMEAOutput COM3, GLL+GSV #EoL\r\n";
-// //GLL and GSV place holders until Sarnoff knows what they want
-
-// return (SendString(cmd)==cmd.length());
-// }
-
-// bool Septentrio::ConfigureLogging(string &sLogs)
-// {
-//   //figure out what we are required to log....
-//     //here we read in what we want to log from the mission file..
-//     STRING_LIST Params;
-//     if(m_MissionReader.GetConfiguration(m_sAppName,Params))
-//     {
-//         //this will make columns in sync log in order they
-//         //were declared in *.moos file
-//         Params.reverse();
-    
-//     //string sLogs="";
-//         STRING_LIST::iterator p;
-//         for(p=Params.begin();p!=Params.end();p++)
-//         {
-//             string sParam = *p;
-//             string sWhat = MOOSChomp(sParam,"=");
-    
-//             if(MOOSStrCmp(sWhat,"LOG")) 
-//       {
-//         sLogs+=sParam+"+";
-//             }//end (MOOSStrCmp(sWhat,"LOG"))
-//         }//end for(p=Params.begin();p!=Params.end();p++)
-//     sLogs.erase(sLogs.length()-1,1);
-//     } //end if(m_MissionReader.GetConfiguration(m_sAppName,Params))
-//   else
-//     {
-//         MOOSTrace("Warning:\n\tNo Configuration block was read - unusual but not terminal\n");
-//     }
-//   return true;
-// }
 
 
 void Septentrio::bufferIncomingData(uint8_t *msg, size_t length)
@@ -652,35 +529,35 @@ void Septentrio::ParseBinary(unsigned char* block, unsigned short ID)
 
     // Postion and velocity in XYZ
     case 5903:
-      SEP_PVTXYZ latest_pvtxyz;
+      PvtCartesian latest_pvtxyz;
       memcpy(&latest_pvtxyz, block+8, sizeof(latest_pvtxyz));
       pvt_cartesian_callback(latest_pvtxyz, read_timestamp);
       break;
 
     // Position Covariance block
     case 5905:
-      SEP_PVTXYZ_POS_COV latest_pvtxyz_pos_cov;
+      PosCovCartesian latest_pvtxyz_pos_cov;
       memcpy(&latest_pvtxyz_pos_cov, block+8, sizeof(latest_pvtxyz_pos_cov));
       pos_cov_cartesian_callback(latest_pvtxyz_pos_cov, read_timestamp);
       break;
 
     // Velocity Covariance block
     case 5907:
-      SEP_PVTXYZ_VEL_COV latest_pvtxyz_vel_cov;
+      VelCovCartesian latest_pvtxyz_vel_cov;
       memcpy(&latest_pvtxyz_vel_cov, block+8, sizeof(latest_pvtxyz_vel_cov));
       vel_cov_cartesian_callback(latest_pvtxyz_vel_cov, read_timestamp);
       break;
 
     // Attitude expressed as Euler Angle 
     case 5938: 
-      SEP_ATTEULER latest_atteuler;
+      AttitudeEuler latest_atteuler;
       memcpy(&latest_atteuler, block+8, sizeof(latest_atteuler));
       attitude_euler_callback(latest_atteuler, read_timestamp);
       break;
 
     //Attitude covariance (cross terms not currently given)
     case 5939:
-      SEP_ATTEULER_COV latest_atteuler_cov;
+      AttitudeCovEuler latest_atteuler_cov;
       memcpy(&latest_atteuler_cov, block+8, sizeof(latest_atteuler_cov));
       attitude_cov_euler_callback(latest_atteuler_cov, read_timestamp);
       break;
@@ -701,124 +578,8 @@ void Septentrio::ParseBinary(unsigned char* block, unsigned short ID)
 }
 
 
-// void Septentrio::update_ephemeris(double &blockTime){
-
-//   double ephems[22];
-//   ephems[0] = (unsigned int)latest_ephemeris.PRN;
-//   ephems[1] = latest_ephemeris.t_oe;
-//   ephems[2] = latest_ephemeris.SQRT_A;
-//   ephems[3] = latest_ephemeris.DELTA_N;
-//   ephems[4] = latest_ephemeris.M_0;
-//   ephems[5] = latest_ephemeris.e;
-//   ephems[6] = latest_ephemeris.omega;
-//   ephems[7] = latest_ephemeris.C_uc;
-//   ephems[8] = latest_ephemeris.C_us;
-//   ephems[9] = latest_ephemeris.C_rc;
-//   ephems[10] = latest_ephemeris.C_rs;
-//   ephems[11] = latest_ephemeris.C_ic;
-//   ephems[12] = latest_ephemeris.C_is;
-//   ephems[13] = latest_ephemeris.i_0;
-//   ephems[14] = latest_ephemeris.IDOT;
-//   ephems[15] = latest_ephemeris.OMEGA_0;
-//   ephems[16] = latest_ephemeris.OMEGADOT;
-//   ephems[17] = latest_ephemeris.t_oc;
-//   ephems[18] = latest_ephemeris.T_gd;
-//   ephems[19] = latest_ephemeris.a_f0;
-//   ephems[20] = latest_ephemeris.a_f1;
-//   ephems[21] = latest_ephemeris.a_f2; 
-
-//   std::string VarName="zEphem"+stringUtils::to_string((unsigned int)latest_ephemeris.PRN);
-
-// }
-// void Septentrio::update_range(unsigned char* block, double &blockTime){
-
-//   SEP_RANGE_HEADING latest_range_heading;
-//   SEP_RANGE_SUB_BLOCK latest_range_sub_block;
-//   RANGE_DATA latest_range_data;
-
-//   int number_observations_1=0;
-//   int number_observations_2=0;
-//   int number_observations_3=0;
-
-//   int i=0;
-//   int byte_track=0;
-//   unsigned int antenna;
-  
-//   memcpy(&latest_range_heading,block+8,sizeof(latest_range_heading));
-
-//   while(i<(unsigned int)latest_range_heading.N)
-//   {
-//     memcpy(&latest_range_sub_block,block+(byte_track+16),sizeof(latest_range_sub_block));
-//     antenna=(unsigned int)latest_range_sub_block.Flags.antennaID;
-
-//     switch(antenna){
-//       case 1:
-//         latest_range_data.SVID_1[number_observations_1]= (unsigned int)latest_range_sub_block.SVID;
-//         latest_range_data.CACode_1[number_observations_1]= (double)latest_range_sub_block.CACode;
-//         //latest_range_data.P1_CACode_1[number_observations_1]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P1_CACode;
-//         //latest_range_data.P2_CACode_1[number_observations_1]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P2_CACode;
-//         latest_range_data.L1Phase_1[number_observations_1]= (double)latest_range_sub_block.L1Phase;
-//         //latest_range_data.L2Phase_1[number_observations_1]= (double)latest_range_sub_block.L2Phase;
-//         latest_range_data.L1Doppler_1[number_observations_1]= (double)latest_range_sub_block.L1Doppler * .0001;
-//         //latest_range_data.L2Doppler_1[number_observations_1]= (double)latest_range_sub_block.L2Doppler * .0001;
-//         latest_range_data.CAC2N_1[number_observations_1]= (signed int)latest_range_sub_block.CACN0 * .1;
-//         //latest_range_data.P1C2N_1[number_observations_1]= (signed int)latest_range_sub_block.P1CN0 * .1;
-//         //latest_range_data.P2C2N_1[number_observations_1]= (signed int)latest_range_sub_block.P2CN0 * .1;
-//         number_observations_1=number_observations_1+1;
-
-//         break;
-//       case 2:
-        
-//         latest_range_data.SVID_2[number_observations_2]= (unsigned int)latest_range_sub_block.SVID;
-//         latest_range_data.CACode_2[number_observations_2]= (double)latest_range_sub_block.CACode;
-//         //latest_range_data.P1_CACode_2[number_observations_2]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P1_CACode;
-//         //latest_range_data.P2_CACode_2[number_observations_2]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P2_CACode;
-//         latest_range_data.L1Phase_2[number_observations_2]= (double)latest_range_sub_block.L1Phase;
-//         //latest_range_data.L2Phase_2[number_observations_2]= (double)latest_range_sub_block.L2Phase;
-//         latest_range_data.L1Doppler_2[number_observations_2]= (double)latest_range_sub_block.L1Doppler * .0001;
-//         //latest_range_data.L2Doppler_2[number_observations_2]= (double)latest_range_sub_block.L2Doppler * .0001;
-//         latest_range_data.CAC2N_2[number_observations_2]= (signed int)latest_range_sub_block.CACN0 * .1;
-//         //latest_range_data.P1C2N_2[number_observations_2]= (signed int)latest_range_sub_block.P1CN0 * .1;
-//         //latest_range_data.P2C2N_2[number_observations_2]= (signed int)latest_range_sub_block.P2CN0 * .1;
-//         number_observations_2=number_observations_2+1;
-
-//         break;
-//       case 3:
-//         latest_range_data.SVID_3[number_observations_3]= (unsigned int)latest_range_sub_block.SVID;
-//         latest_range_data.CACode_3[number_observations_3]= (double)latest_range_sub_block.CACode;
-//         //latest_range_data.P1_CACode_3[number_observations_3]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P1_CACode;
-//         //latest_range_data.P2_CACode_3[number_observations_3]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P2_CACode;
-//         latest_range_data.L1Phase_3[number_observations_3]= (double)latest_range_sub_block.L1Phase;
-//         //latest_range_data.L2Phase_3[number_observations_3]= (double)latest_range_sub_block.L2Phase;
-//         latest_range_data.L1Doppler_3[number_observations_3]= (double)latest_range_sub_block.L1Doppler * .0001;
-//         //latest_range_data.L2Doppler_3[number_observations_3]= (double)latest_range_sub_block.L2Doppler * .0001;
-//         latest_range_data.CAC2N_3[number_observations_3]= (signed int)latest_range_sub_block.CACN0 * .1;
-//         //latest_range_data.P1C2N_3[number_observations_3]= (signed int)latest_range_sub_block.P1CN0 * .1;
-//         //latest_range_data.P2C2N_3[number_observations_3]= (signed int)latest_range_sub_block.P2CN0 * .1;
-//         number_observations_3=number_observations_3+1;
-//     }
-
-//     i=i+1;
-//     byte_track=byte_track+(unsigned int)latest_range_heading.SBLength;
-//   }
-
-  // do something with it here.
-
-// }
-
-
 bool Septentrio::SetAntennaLocations(int ant_num, std::string x, std::string y, std::string z)
 {
-
-/*
-  string septentrioCom; //The comm port number on the Septentrio reciever
-  if(!m_MissionReader.GetConfigurationParam("SEPTENTRIO_COM",septentrioCom))
-  {
-    MOOSTrace("SEPTENTRIO_COM not set in mission file - Set to Default: COM1\n");
-    septentrioCom="COM1";
-  }//Be sure to set in mission file
-*/    
-  
   std::string cmd;
 
   if (ant_num==1) {
