@@ -502,6 +502,8 @@ void Septentrio::ParseASCII(unsigned char* block)
   // std::cout << "\nASCII MESSAGE!!!\n";
   //cout<<block;
 }
+
+
 void Septentrio::ParseBinary(unsigned char* block, unsigned short ID)
 {
   // std::cout << "Septentrio::ParseBinary" << std::endl;

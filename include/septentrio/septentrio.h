@@ -105,9 +105,6 @@ class Septentrio {
     void ParseASCII(unsigned char* block); //Parse ASCII message from septentrio
     void ParseBinary(unsigned char* block, unsigned short ID); //!< Parses one septentrio block
 
-    void update_ephemeris(double &blockTime);
-    void update_range(unsigned char* block, double &blockTime);
-
     /////////////////////////////////
     // Serial port reading members // 
     /////////////////////////////////

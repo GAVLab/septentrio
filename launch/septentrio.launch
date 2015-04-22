@@ -1,20 +1,54 @@
+<!-- 
+
+  IMPORTANT!!!!
+
+  If you feel the need to modify this file, DON'T... Not unless it reflects some
+  change in the driver source code or assosciated ROS wrapper.
+
+  If you are simply trying to modify the launch file for your specific scenario:
+    1. create a copy of this file in the `launch` folder
+    2. rename it intelligently
+    3. include comments about what the launch does and is used for
+
+
+@author: Robert Cofield
+
+-->
+
+
 <launch>
-    <node 
+    <node name="septentrio_node"
         pkg="septentrio"
         type="septentrio_node"
-        name="septentrio_node"
         output="screen"
         required="true">
 
         <param name="port"             value="/dev/ttyUSB0" type="string"/>
-        <param name="baudrate"         value="115200" type="int" />
-        <param name="septentrio_port"  value="COM1" type="string"/>
-        <rosparam param="logs">["PVTCar", "CovCar", "AttEuler", "CovEuler"]</rosparam>
+        <param name="baudrate"         value="115200"       type="int" />
+        <param name="septentrio_port"  value="COM1"         type="string"/>
+        <param name="output_rate"       value="1.0"   type="string"/>
+        <param name="range_output_rate" value="1.0"   type="string"/>
+        
+        <rosparam param="logs">
+          ["PVTCar", "CovCar", "AttEuler", "CovEuler"]
+        </rosparam>
 
-
-        <!-- output_rate -->
-        <!-- range_output_rate -->
-
-
+        <!--
+          - This is the old G35 (2003) configuration
+          - It enables NED-like output (SAE convention)
+          - Auxiliary antenna 1 is above the front left door
+          - Primary antenna is above the rear left door
+          - Auxiliary antenna 2 is above the rear right door
+        -->
+        <rosparam param="antenna_locations">
+          1:
+            x: 1.1464
+            y: 0.0292
+            z: 0.0
+          2:
+            x: 0.0
+            y: 1.9091
+            z: 0.0
+        </rosparam>
     </node>
 </launch>

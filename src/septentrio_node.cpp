@@ -28,17 +28,21 @@ SeptentrioNode::SeptentrioNode()
   gps.setAttitudeEulerCallback(    boost::bind(&SeptentrioNode::attitudeEulerCallback,    this, _1, _2) );
   gps.setAttitudeCovEulerCallback( boost::bind(&SeptentrioNode::attitudeCovEulerCallback, this, _1, _2) );
 
-  std::string port_, sep_port_;
+  std::string port_, sep_port_, output_rate_, range_output_rate_;
   int baud_;
   std::string name_ = ros::this_node::getName();
   nh.getParam(name_+"/port", port_);
   nh.getParam(name_+"/baudrate", baud_);
-  nh.getParam(name_+"/septentrio_port", sep_port_)  ;
+  nh.getParam(name_+"/septentrio_port", sep_port_);
+  nh.getParam(name_+"/output_rate"      , output_rate_);
+  nh.getParam(name_+"/range_output_rate", range_output_rate_);
   ROS_INFO_STREAM("Septentrio:\n\tPort: " << port_ << 
                   "\n\tBaud: " << baud_ <<
                   "\n\tSeptentrio Port: " << sep_port_ << "\n");
   try {
     gps.connect(port_, baud_, sep_port_);
+    gps.setOutputRate(output_rate_);
+    gps.setRangeOutputRate(range_output_rate_);
   } catch (std::exception e) {
     std::cout << "Error in connecting" << std::endl;
   }
