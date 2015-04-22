@@ -1,0 +1,14 @@
+<launch>
+    <node 
+        pkg="septentrio"
+        type="septentrio_node"
+        name="septentrio_node"
+        output="screen"
+        required="true">
+
+        <param name="port"             value="/dev/ttyUSB" />
+        <param name="baudrate"         value="115200" />
+        <param name="septentrio_port"  value="COM1" />
+
+    </node>
+</launch>
