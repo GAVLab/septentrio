@@ -6,9 +6,15 @@
         output="screen"
         required="true">
 
-        <param name="port"             value="/dev/ttyUSB" type="string"/>
+        <param name="port"             value="/dev/ttyUSB0" type="string"/>
         <param name="baudrate"         value="115200" type="int" />
         <param name="septentrio_port"  value="COM1" type="string"/>
+        <rosparam param="logs">["PVTCar", "CovCar", "AttEuler", "CovEuler"]</rosparam>
+
+
+        <!-- output_rate -->
+        <!-- range_output_rate -->
+
 
     </node>
 </launch>

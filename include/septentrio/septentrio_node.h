@@ -1,14 +1,17 @@
 #include <septentrio/septentrio.h>
 #include <ros/ros.h>
 #include <septentrio/PvtCartesianMsg.h>
+#include <septentrio/PosCovCartesianMsg.h>
+#include <septentrio/VelCovCartesianMsg.h>
+#include <septentrio/AttitudeEulerMsg.h>
+#include <septentrio/AttitudeCovEulerMsg.h>
 
 
-class SeptentrioNode
-{
+class SeptentrioNode {
+
   public:
 
     SeptentrioNode();  
-
 
   private:
 
@@ -21,13 +24,6 @@ class SeptentrioNode
     void attitudeEulerCallback(AttitudeEuler&, double&);
     void attitudeCovEulerCallback(AttitudeCovEuler&, double&);
 
-    // ReceiverTime receiver_time;
-    // PvtCartesian pvt_cartesian;
-    // PosCovCartesian pos_cov_cartesian;
-    // VelCovCartesian vel_cov_cartesian;
-    // AttitudeEuler attitude_euler;
-    // AttitudeCovEuler attitude_cov_euler;
-
     ros::NodeHandle nh;
     ros::Publisher receiver_time_pub;
     ros::Publisher pvt_cartesian_pub;
@@ -36,8 +32,7 @@ class SeptentrioNode
     ros::Publisher attitude_euler_pub;
     ros::Publisher attitude_cov_euler_pub;
 
-    // 
+    // driver object
     Septentrio gps;
-
 
 };

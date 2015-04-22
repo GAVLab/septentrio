@@ -1,11 +1,20 @@
-//Written by:
-//  Lowell Brown & David Hodo
-//  Auburn University
+/*Written by:
+ * Lowell Brown & David Hodo
+ * Auburn University
+ *
+ * Manual available at:
+ *    http://www.septentrio.com/secure/polarx3_2_2/PolaRx2Manual.pdf
+ *
+ */
 #ifndef _SEPTENTRIO_H
 #define _SEPTENTRIO_H
 
 #define MAX_MSG_SIZE 4096 //!< see header message length
-#define MAX_NOUT_SIZE      (5000)   // Maximum size of a NovAtel log buffer (ALMANAC logs are big!)
+#define MAX_NOUT_SIZE (5000)   // Maximum size of a NovAtel log buffer (ALMANAC logs are big!)
+
+#define SEP_SYNC_BYTE_1 0x24 //0x24 is ASCII for $ - 1st byte in each message
+#define SEP_SYNC_BYTE_2 0x40 //0x24 is ASCII for @ - 2nd byte to indicate Binary message
+#define SEP_SYNC_BYTE_3 0x50 //0x50 is ASCII for P - 2nd byte to indicate ASCII message
 
 #include "septentrio_structs.h"
 
@@ -44,20 +53,28 @@ class Septentrio {
     Septentrio();
     ~Septentrio();
 
+    //////////////////////////
+    // Connection functions //
+    //////////////////////////
+
     bool connect(std::string port, int baudrate=115200, std::string septentrio_port_="COM1");
     void disconnect();
     inline bool isConnected() {return is_connected;}
 
+    //////////////////////////////
+    // Septentrio Configuration //
+    //////////////////////////////
+
     bool clearLog(); //!< turn off logs
     bool requestLog(std::string logcode_); //!< request an additional Block from the receiver
-
-    /* Setters that replace mission file reader */
     bool setOutputRate(std::string r); //!< request the PVT log rate
-    bool setRangeOutputRate(std::string r); //!< request the Meas (range) log rate
-    
+    bool setRangeOutputRate(std::string r); //!< request the Meas (range) log rate   
     bool SetAntennaLocations(int ant_num, std::string x, std::string y, std::string z);
 
-    /* callback setters */
+    //////////////////////////////
+    // message callback setters //
+    //////////////////////////////
+
     inline void setReceiverTimeCallback(ReceiverTimeCallback c) {receiver_time_callback = c;};
     inline void setPvtCartesianCallback(PvtCartesianCallback c) {pvt_cartesian_callback = c;};
     inline void setPosCovCartesianCallback(PosCovCartesianCallback c) {pos_cov_cartesian_callback = c;};
@@ -73,24 +90,28 @@ class Septentrio {
 
   private:
 
-    // serial port functions
+    ///////////////////////////
+    // serial port functions //
+    ///////////////////////////
+
     void startReading();
     void stopReading();
     void readSerialPort();
 
     // bool RequestNMEACOM3(); // request NMEA message over COM3 on Septentrio
     // void SetRTK(string RTK_com,string RTK_baud,string RTK_correction_type);
+
     void bufferIncomingData(uint8_t * msg, size_t length); //!< data read from serial port is passed to this method
     void ParseASCII(unsigned char* block); //Parse ASCII message from septentrio
     void ParseBinary(unsigned char* block, unsigned short ID); //!< Parses one septentrio block
-    bool OnInitialized(); //!< Sets the rate of the message outputSEP_FLAGS sep_flags;
 
     void update_ephemeris(double &blockTime);
     void update_range(unsigned char* block, double &blockTime);
 
-    //////////////////////////////////////////////////////
-    // Serial port reading members
-    //////////////////////////////////////////////////////
+    /////////////////////////////////
+    // Serial port reading members // 
+    /////////////////////////////////
+
     //! Serial port object for communicating with sensor
     serial::Serial *serial_port;
     //! shared pointer to Boost thread for listening for data from novatel
@@ -120,7 +141,10 @@ class Septentrio {
     Header latest_header;
     ReceiverTime latest_receivertime;
 
-    /* callback handlers */
+    ///////////////////////
+    // callback handlers //
+    ///////////////////////
+
     GetTimeCallback               time_handler;
     ReceiverTimeCallback          receiver_time_callback;
     PvtCartesianCallback          pvt_cartesian_callback;
@@ -131,4 +155,4 @@ class Septentrio {
 
 };
 
-#endif  /* _GSEPTENTRIO_H */
+#endif  // _GSEPTENTRIO_H

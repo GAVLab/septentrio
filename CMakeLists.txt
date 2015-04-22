@@ -53,7 +53,11 @@ find_package(Boost REQUIRED
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  PvtCartesianMsg.msg
+    PvtCartesianMsg.msg
+    PosCovCartesianMsg.msg
+    VelCovCartesianMsg.msg
+    AttitudeEulerMsg.msg
+    AttitudeCovEulerMsg.msg
 )
 
 ## Generate services in the 'srv' folder

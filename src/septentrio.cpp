@@ -61,8 +61,8 @@ Septentrio::Septentrio()
   attitude_euler_callback =         defaultAttitudeEulerCallback;
   attitude_cov_euler_callback =     defaultAttitudeCovEulerCallback;
   
-  setOutputRate("1");
-  setRangeOutputRate("1");
+  output_rate = "1";
+  range_output_rate = "1";
 
   manual_position = false;
   x1 = "0.0292";
@@ -147,7 +147,6 @@ bool Septentrio::connect(std::string port, int baudrate, std::string septentrio_
     }
 
     serial_port->flush();
-    clearLog(); // turn off all output
 
     // !!!!!!!!!!!!!
     // Assume that connection is successful
@@ -176,6 +175,10 @@ bool Septentrio::connect(std::string port, int baudrate, std::string septentrio_
   // start reading
   startReading();
   is_connected = true;
+
+  clearLog(); // turn off all output
+  setOutputRate(output_rate);
+  setRangeOutputRate(range_output_rate);
 
   // set manual position
   std::string galcmd;  
@@ -299,92 +302,75 @@ bool Septentrio::setRangeOutputRate(std::string r)
 
 void Septentrio::bufferIncomingData(uint8_t *msg, size_t length)
 {
-  //cout<<"Buffering\n";
-    
+  // std::cout<<"Buffering\n";
+  // std::cout<<"Size of msg: " << length << std::endl;
   // add incoming data to buffer
-  for (unsigned int i=0; i<length; i++) 
-  {
+  for (unsigned int i=0; i<length; i++) {
     //cout << i << ": " << hex << (int)msg[i] << dec  << " : " << bytesRemaining  << " : " << bufIndex << endl;
     // make sure bufIndex is not larger than buffer
-    if (bufIndex>=MAX_MSG_SIZE)
-    {
-      bufIndex=0;
+    if (bufIndex >= MAX_MSG_SIZE) {
+      bufIndex = 0;
       std::cout << "Septentrio: Overflowed receive buffer. Reset" << std::endl;
     }
-
-    if (bufIndex==0)
-    { // looking for beginning of message
-      if (msg[i]==0x24)//0x24 is ASCII for $
-      { // beginning of msg found - add to buffer
-        dataBuf[bufIndex++]=msg[i];
-        bytesRemaining=0;
-        readingASCII=false;
-      } // end if (msg[i]
-      
-    } // end if (bufIndex==0)
-    else if (bufIndex==1)
-    { // verify 2nd character of header
-      if (msg[i]==0x40) //0x24 is ASCII for @
-      { // 2nd byte ok - add to buffer
-        dataBuf[bufIndex++]=msg[i];
-        //cout<<"Binary Message\n";
+    // looking for beginning of message
+    if (bufIndex == 0) { 
+      if (msg[i] == SEP_SYNC_BYTE_1) {
+        // beginning of msg found - add to buffer
+        // std::cout << "Beginning of message found\n";
+        dataBuf[bufIndex++] = msg[i];
+        bytesRemaining = 0;
+        readingASCII = false;
       }
-      else if (msg[i]==0x50) //0x50 is ASCII for P, indicates
-      {
-        readingASCII=true;
+    } else if (bufIndex==1)     { // verify 2nd character of header
+      if (msg[i] == SEP_SYNC_BYTE_2) { // 2nd byte ok - add to buffer
         dataBuf[bufIndex++]=msg[i];
-        //cout<<"ASCII Message\n";
+        // std::cout<<"Binary Message\n";
+      } else if (msg[i] == SEP_SYNC_BYTE_3) {
+        readingASCII = true;
+        dataBuf[bufIndex++] = msg[i];
+        // std::cout<<"ASCII Message\n";
       } else {
         // start looking for new message again
+        // std::cout << "start looking for new message again" << std::endl;
         bufIndex=0;
         bytesRemaining=0;
         readingASCII=false;
-      } // end if (msg[i]==0x40)
-    } // end else if (bufIndex==1)http://www.septentrio.com/secure/polarx3_2_2/PolaRx2Manual.pdf
-    else if (bufIndex==7)
-    { // reading last byte of header
-        //cout<<"(bufIndex==7)\n";
+      }
+    } else if (bufIndex == 7) { // reading last byte of header
+        // std::cout<<"(bufIndex==7)\n";
         dataBuf[bufIndex++]=msg[i]; 
         //we should have the entire header now
-        if (!readingASCII)
-        {
+        if (!readingASCII) {
           memcpy(&latest_header, dataBuf, 8);
           bytesRemaining = latest_header.Length - 8;//!< How many bytes are left to read in the message
         }
-    } // end else if (bufIndex==7)
-    else if (bytesRemaining==1)
-    { // add last byte and parse
-      //cout<<"(bytesRemaining==1)\n";
+    } else if (bytesRemaining==1) { // add last byte and parse
+      // std::cout<<"(bytesRemaining==1)\n";
       dataBuf[bufIndex++]=msg[i];
       ParseBinary(dataBuf,latest_header.ID);
       // reset counters
       bufIndex=0;
       bytesRemaining=0;
-      //cout << "Message Done." << endl;
-    }  // end else if (bytesRemaining==1)
-    else if ((bytesRemaining>1)||((bufIndex>1)&&(bufIndex<7)))
-    { // add data to buffer
-      dataBuf[bufIndex++]=msg[i];
-      if (!readingASCII)
+      // std::cout << "Message Done." << std::endl;
+    } else if ((bytesRemaining>1)||((bufIndex>1)&&(bufIndex<7))) { // add data to buffer
+      dataBuf[bufIndex++] = msg[i];
+      if (!readingASCII) {
         bytesRemaining--;
-    }
-    else if ((readingASCII)&&(bufIndex>7))
-    {
-      //cout<<"reading ascii message\n";
-      //cout<<hex<<(int)msg[i]<< std::endl;
-      if (!((msg[i]==0x23)||(msg[i]==0x0D))) //looking for end of line character, a pound symbol from the septentrio, hex 0x23
-      {
-        dataBuf[bufIndex++]=msg[i];
       }
-      else
-      {
+    } else if ( (readingASCII) && (bufIndex > 7) ) {
+      // std::cout<<"reading ascii message\n";
+      // std::cout<<hex<<(int)msg[i]<< std::endl;
+      if (!((msg[i]==0x23)||(msg[i]==0x0D))) {
+        //looking for end of line character, a pound symbol from the septentrio, hex 0x23
+        dataBuf[bufIndex++]=msg[i];
+      } else {
         dataBuf[bufIndex++]=0;
         ParseASCII(dataBuf);
         readingASCII=false;
         bufIndex=0;
       }
     }
-  } // end for
+  }
 }
 
 void Septentrio::ParseASCII(unsigned char* block)
@@ -410,33 +396,29 @@ void Septentrio::ParseASCII(unsigned char* block)
     boost::tokenizer<boost::char_separator<char> >::iterator itField = tokens.begin();
     itField++; //advance past header
     //determine ASCII message type
-    if (*itField=="SetAntennaLocation")//Response to "gal" (get antenna locations)
-    {
-      if (*++itField=="auto")//determine antenna location mode
-      {
+
+    //Response to "gal" (get antenna locations)
+    if (*itField=="SetAntennaLocation") {
+      if (*++itField=="auto") {
+        //determine antenna location mode
         good_antenna_locations=false;
         std::cout << "Antenna Locations set to AUTO\n";
         //send correct antenna locations
-      }
-      else if (*itField=="manual")
-      {
-        
+      } else if (*itField=="manual") {         
         std::cout << "Antenna Locations set to MANUAL\n";
         //check antenna location, resend only if necessary
         i=strtod((*++itField).c_str(),NULL);
         std::cout << "Checking location of antenna # " << i << ":" << std::endl;
-        if (i==1)
-        {
+        if (i==1) {
           std::cout << "\tX coordinate:\n";
           //Check x coordinate
           f=strtod((*++itField).c_str(),NULL);    
           std::cout << "\t actual\t" << f << std::endl;
           std::cout << "\t desired\t" << strtod(x1.c_str(),NULL)<< std::endl;
           std::cout << "\t Difference\t" << abs(f-strtod(x1.c_str(),NULL))<< std::endl;
-          if (abs(f-strtod(x1.c_str(),NULL))<.0001)
+          if (abs(f-strtod(x1.c_str(),NULL))<.0001) {
             std::cout << "MATCH!\n";
-          else
-          {
+          } else {
             good_antenna_locations=false;
             std::cout << f <<"\t"<<strtod(x1.c_str(),NULL) << "\n";
             std::cout << "MISMATCH!\n";
@@ -446,10 +428,9 @@ void Septentrio::ParseASCII(unsigned char* block)
           std::cout << "\t actual\t" << f << std::endl;
           std::cout << "\t desired\t" << strtod(y1.c_str(),NULL) << std::endl;
           std::cout << "\t Difference\t" << abs(f-strtod(y1.c_str(),NULL)) << std::endl;
-          if (abs(f-strtod(y1.c_str(),NULL))<.0001)
+          if (abs(f-strtod(y1.c_str(),NULL))<.0001) {
             std::cout << "MATCH!\n";
-          else
-          {
+          } else {
             good_antenna_locations=false;
             std::cout << f <<"\t" << strtod(y1.c_str(),NULL) << "\n";
             std::cout << "MISMATCH!\n";
@@ -459,10 +440,9 @@ void Septentrio::ParseASCII(unsigned char* block)
           std::cout << "\t actual\t" << f << std::endl;
           std::cout << "\t desired\t" << strtod(z1.c_str(),NULL) << std::endl;
           std::cout << "\t Difference\t" << abs(f-strtod(z1.c_str(),NULL)) << std::endl;
-          if (abs(f-strtod(z1.c_str(),NULL))<.0001)
+          if (abs(f-strtod(z1.c_str(),NULL))<.0001) {
             std::cout << "MATCH!\n";
-          else
-          {
+          } else {
             good_antenna_locations=false;
             std::cout << f << "\t" <<strtod(z1.c_str(),NULL) << "\n";
             std::cout << "MISMATCH!\n ";
@@ -498,28 +478,33 @@ void Septentrio::ParseASCII(unsigned char* block)
           std::cout << "\t actual\t" << f << std::endl;
           std::cout << "\t desired\t" << strtod(z2.c_str(),NULL) << std::endl;
           std::cout << "\t Difference\t" << abs(f-strtod(z2.c_str(),NULL)) << std::endl;
-          if (abs(f-strtod(z2.c_str(),NULL))<.0001)
+          if (abs(f-strtod(z2.c_str(),NULL))<.0001) {
             std::cout << "MATCH!\n";
-          else {
+          } else {
             good_antenna_locations=false;
             std::cout << f <<"\t" << strtod(z2.c_str(),NULL) << "\n";
             std::cout << "MISMATCH!\n";
           }
         }
+
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         //POST RESULT TO DATABASE!!!
         // PublishData("zAntennaLocations",block2, blockTime);
         // PublishData("zAntennaLocationsMatch",good_antenna_locations, blockTime);
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
       } else {
         std::cout << "else\n";
         std::cout << *itField<<"#"<< std::endl;    
       }
     }
   }
-  std::cout << "\nASCII MESSAGE!!!\n";
+  // std::cout << "\nASCII MESSAGE!!!\n";
   //cout<<block;
 }
 void Septentrio::ParseBinary(unsigned char* block, unsigned short ID)
 {
+  // std::cout << "Septentrio::ParseBinary" << std::endl;
   switch(ID) {
     // Reciever time (Current GPS and UTC time)
     case 5914:
