@@ -83,9 +83,18 @@ SeptentrioNode::SeptentrioNode()
     ROS_ERROR_STREAM("Couldn't configure logs: " << e.what());
   }
   // check for RTK request
-  std::map<std::string,std::string> rtk_;
-  if (nh.getParam(name_+"/rtk", rtk_)) {
-   gps.setRTK(rtk_["port"], atoi(rtk_["baud"].c_str()), rtk_["format"]);
+  // std::map<std::string,std::string> rtk_;
+  // ROS_INFO_STREAM("\n\nasking for param: "<<name_+"/rtk" );
+  std::string rtk_port_, rtk_format_;
+  int rtk_baud_;
+  nh.getParam(name_+"/rtk_port", rtk_port_);
+  nh.getParam(name_+"/rtk_baud", rtk_baud_);
+  nh.getParam(name_+"/rtk_format", rtk_format_);
+  if (rtk_format_.length() > 0){
+    ROS_INFO_STREAM("\nNode is requesting RTK\n");
+    gps.setRTK(rtk_port_, rtk_baud_, rtk_format_);
+  } else {
+    ROS_INFO_STREAM("\n\nAin't doin rtk\n\n");
   }
 }
 

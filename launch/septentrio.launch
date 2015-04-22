@@ -23,7 +23,7 @@
     output="screen"
     required="true">
 
-    <param name="port"             value="/dev/ttyUSB0" type="string"/>
+    <param name="port"             value="/dev/ttyS0" type="string"/>
     <param name="baudrate"         value="115200"       type="int" />
     <param name="septentrio_port"  value="COM1"         type="string"/>
     <param name="output_rate"       value="1.0"   type="string"/>
@@ -65,11 +65,10 @@
         - for NTRIP from Lefebure, use RTCM
       Port: which port on the septentrio board
      -->
-    <rosparam param="rtk">
-      port: COM2
-      baud: 115200
-      format: RTCM
-    </rosparam>
+    <param name="rtk_port" value="COM2"/>
+    <param name="rtk_baud" value="115200" type="int"/>
+    <param name="rtk_format" value="RTCM3"/>
+
 
   </node>
 </launch>
