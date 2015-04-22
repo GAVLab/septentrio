@@ -52,10 +52,6 @@ SeptentrioNode::SeptentrioNode()
                   );
   try {
     gps.connect(port_, baud_, sep_port_);
-    gps.setOutputRate(output_rate_);
-    gps.setRangeOutputRate(range_output_rate_);
-    gps.setAntennaLocations(1, antenna_1_loc_["x"], antenna_1_loc_["y"], antenna_1_loc_["z"]);
-    gps.setAntennaLocations(2, antenna_2_loc_["x"], antenna_2_loc_["y"], antenna_2_loc_["z"]);
   } catch (std::exception e) {
     ROS_ERROR_STREAM("Error in connecting: " << e.what());
   }
@@ -64,6 +60,12 @@ SeptentrioNode::SeptentrioNode()
   } else {
     ROS_INFO_STREAM("Septentrio connected!\n");
   }
+  
+  gps.setOutputRate(output_rate_);
+  gps.setRangeOutputRate(range_output_rate_);
+  gps.setAntennaLocations(1, antenna_1_loc_["x"], antenna_1_loc_["y"], antenna_1_loc_["z"]);
+  gps.setAntennaLocations(2, antenna_2_loc_["x"], antenna_2_loc_["y"], antenna_2_loc_["z"]);
+  ROS_INFO_STREAM("Septentrio configuration done.");
   
   try {
     std::vector<std::string> logs_;
