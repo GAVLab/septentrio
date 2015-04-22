@@ -1,4 +1,5 @@
 #include <septentrio/septentrio.h>
+
 #include <ros/ros.h>
 #include <septentrio/PvtCartesianMsg.h>
 #include <septentrio/PosCovCartesianMsg.h>
@@ -15,8 +16,16 @@ class SeptentrioNode {
 
   private:
 
-    // Callbacks to receive from the Septentrio
-    double getTimeCallback();
+    /*
+     *  Allows ROS time to be tagged to each message as soon as it comes across
+     *  the serial port.
+     */
+    double getTimeHandler();
+
+    //////////////////////////////////////////////
+    // Callbacks to receive from the Septentrio //
+    //////////////////////////////////////////////
+
     void receiverTimeCallback(ReceiverTime&, double&);
     void pvtCartestianCallback(PvtCartesian&, double&);
     void posCovCartesianCallback(PosCovCartesian&, double&);
@@ -24,6 +33,10 @@ class SeptentrioNode {
     void attitudeEulerCallback(AttitudeEuler&, double&);
     void attitudeCovEulerCallback(AttitudeCovEuler&, double&);
 
+    ////////////////////
+    // ROS attributes // 
+    ////////////////////
+    
     ros::NodeHandle nh;
     ros::Publisher receiver_time_pub;
     ros::Publisher pvt_cartesian_pub;

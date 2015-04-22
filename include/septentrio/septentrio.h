@@ -1,6 +1,11 @@
-/*Written by:
- * Lowell Brown & David Hodo
- * Auburn University
+/*
+ * Written by:
+ *  Lowell Brown & David Hodo
+ *
+ * Major edits by:
+ *  Robert Cofield & William McCarty 
+ *
+ *  Auburn University
  *
  * Manual available at:
  *    http://www.septentrio.com/secure/polarx3_2_2/PolaRx2Manual.pdf
@@ -15,6 +20,7 @@
 #define SEP_SYNC_BYTE_1 0x24 //0x24 is ASCII for $ - 1st byte in each message
 #define SEP_SYNC_BYTE_2 0x40 //0x24 is ASCII for @ - 2nd byte to indicate Binary message
 #define SEP_SYNC_BYTE_3 0x50 //0x50 is ASCII for P - 2nd byte to indicate ASCII message
+
 
 #include "septentrio_structs.h"
 
@@ -31,9 +37,10 @@
 #include <sstream>
 #include <string.h>
 #include <unistd.h>
+#include <fstream>
 
 
-typedef boost::function<double()> GetTimeCallback;
+typedef boost::function<double()> GetTimeHandler;
 
 // gps data callbacks
 typedef boost::function<void(ReceiverTime&,     double&)> ReceiverTimeCallback;
@@ -69,7 +76,7 @@ class Septentrio {
     bool requestLog(std::string logcode_); //!< request an additional Block from the receiver
     bool setOutputRate(std::string r); //!< request the PVT log rate
     bool setRangeOutputRate(std::string r); //!< request the Meas (range) log rate   
-    bool SetAntennaLocations(int ant_num, std::string x, std::string y, std::string z);
+    bool setAntennaLocations(int ant_num, double x, double y, double z);
 
     //////////////////////////////
     // message callback setters //
@@ -82,11 +89,7 @@ class Septentrio {
     inline void setAttitudeEulerCallback(AttitudeEulerCallback c) {attitude_euler_callback = c;};
     inline void setAttitudeCovEulerCallback(AttitudeCovEulerCallback c) {attitude_cov_euler_callback = c;};
 
-    /* Bullshit */
-    // void display_sep_file(int block_ID);
-    //static void listen_thread(void* Parameter);
-    // unsigned short ComputeCRC(char * buf, int buf_length);
-    // bool CRC_check(char *head, char *mess, int tot_length, int CRC);
+    inline void setTimeHandler(GetTimeHandler h) {time_handler=h;};
 
   private:
 
@@ -98,7 +101,6 @@ class Septentrio {
     void stopReading();
     void readSerialPort();
 
-    // bool RequestNMEACOM3(); // request NMEA message over COM3 on Septentrio
     // void SetRTK(string RTK_com,string RTK_baud,string RTK_correction_type);
 
     void bufferIncomingData(uint8_t * msg, size_t length); //!< data read from serial port is passed to this method
@@ -130,7 +132,7 @@ class Septentrio {
     bool readingASCII;
 
     /* antenna location stuff */
-    std::string x1, y1, z1, x2, y2, z2; // manual antenna locations
+    double x1, y1, z1, x2, y2, z2; // manual antenna locations
     bool manual_position;
     bool good_antenna_locations;
 
@@ -142,7 +144,7 @@ class Septentrio {
     // callback handlers //
     ///////////////////////
 
-    GetTimeCallback               time_handler;
+    GetTimeHandler               time_handler;
     ReceiverTimeCallback          receiver_time_callback;
     PvtCartesianCallback          pvt_cartesian_callback;
     PosCovCartesianCallback       pos_cov_cartesian_callback;

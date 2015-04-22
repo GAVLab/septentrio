@@ -17,38 +17,38 @@
 
 
 <launch>
-    <node name="septentrio_node"
-        pkg="septentrio"
-        type="septentrio_node"
-        output="screen"
-        required="true">
+  <node
+    name="septentrio"
+    pkg="septentrio" type="septentrio_node"
+    output="screen"
+    required="true">
 
-        <param name="port"             value="/dev/ttyUSB0" type="string"/>
-        <param name="baudrate"         value="115200"       type="int" />
-        <param name="septentrio_port"  value="COM1"         type="string"/>
-        <param name="output_rate"       value="1.0"   type="string"/>
-        <param name="range_output_rate" value="1.0"   type="string"/>
-        
-        <rosparam param="logs">
-          ["PVTCar", "CovCar", "AttEuler", "CovEuler"]
-        </rosparam>
+    <param name="port"             value="/dev/ttyUSB0" type="string"/>
+    <param name="baudrate"         value="115200"       type="int" />
+    <param name="septentrio_port"  value="COM1"         type="string"/>
+    <param name="output_rate"       value="1.0"   type="string"/>
+    <param name="range_output_rate" value="1.0"   type="string"/>
+    
+    <rosparam param="logs">
+      ["PVTCar", "CovCar", "AttEuler", "CovEuler"]
+    </rosparam>
 
-        <!--
-          - This is the old G35 (2003) configuration
-          - It enables NED-like output (SAE convention)
-          - Auxiliary antenna 1 is above the front left door
-          - Primary antenna is above the rear left door
-          - Auxiliary antenna 2 is above the rear right door
-        -->
-        <rosparam param="antenna_locations">
-          1:
-            x: 1.1464
-            y: 0.0292
-            z: 0.0
-          2:
-            x: 0.0
-            y: 1.9091
-            z: 0.0
-        </rosparam>
-    </node>
+    <!--
+      - This is the old G35 (2003) configuration
+      - It enables ENU-like output (per Septentrio Manual)
+      - Auxiliary antenna 1 is above the front left door
+      - Primary antenna is above the rear left door
+      - Auxiliary antenna 2 is above the rear right door
+    -->
+    <rosparam param="antenna_location/1">
+      x: 0.0292
+      y: 1.1464
+      z: 0.0
+    </rosparam>
+    <rosparam param="antenna_location/2">
+      x: 1.9091
+      y: 0.0
+      z: 0.0
+    </rosparam>
+  </node>
 </launch>

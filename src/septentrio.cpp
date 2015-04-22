@@ -6,7 +6,15 @@
 #include <septentrio/septentrio.h>
 
 
-double defaultGetTimeCallback() {
+inline void printHex(char *data, int length) {
+    for (int i = 0; i < length; ++i) {
+        printf("0x%.2X ", (unsigned) (unsigned char) data[i]);
+    }
+    printf("\n");
+}
+
+
+double defaultGetTimeHandler() {
   boost::posix_time::ptime present_time(
           boost::posix_time::microsec_clock::universal_time());
   boost::posix_time::time_duration duration(present_time.time_of_day());
@@ -53,7 +61,8 @@ Septentrio::Septentrio()
   bufIndex = 0;
   is_connected = false;
 
-  time_handler =                    defaultGetTimeCallback;
+  time_handler =                    defaultGetTimeHandler;
+
   receiver_time_callback =          defaultReceiverTimeCallback;
   pvt_cartesian_callback =          defaultPvtCartesianCallback;
   pos_cov_cartesian_callback =      defaultPosCovCartesianCallback;
@@ -65,12 +74,12 @@ Septentrio::Septentrio()
   range_output_rate = "1";
 
   manual_position = false;
-  x1 = "0.0292";
-  y1 = "1.1464";
-  z1 = "0";
-  x2 = "1.9091";
-  y2 = "0";
-  z2 = "0";
+  x1 = 0.0;
+  y1 = 0.0;
+  z1 = 0.0;
+  x2 = 0.0;
+  y2 = 0.0;
+  z2 = 0.0;
 
    //Specifically for Sarnoff
   //spits out NMEA messages over COM3 (5 pin output)
@@ -186,8 +195,8 @@ bool Septentrio::connect(std::string port, int baudrate, std::string septentrio_
     std::cout << "manual position true\t" << x2 << std::endl;
     galcmd = "gal\r\n";
     serial_port->write(galcmd)==galcmd.length();
-    SetAntennaLocations(1, x1, y1, z1);
-    SetAntennaLocations(2, x2, y2, z2);
+    setAntennaLocations(1, x1, y1, z1);
+    setAntennaLocations(2, x2, y2, z2);
   }
 
 
@@ -407,44 +416,44 @@ void Septentrio::ParseASCII(unsigned char* block)
       } else if (*itField=="manual") {         
         std::cout << "Antenna Locations set to MANUAL\n";
         //check antenna location, resend only if necessary
-        i=strtod((*++itField).c_str(),NULL);
+        i = strtod((*++itField).c_str(),NULL);
         std::cout << "Checking location of antenna # " << i << ":" << std::endl;
         if (i==1) {
           std::cout << "\tX coordinate:\n";
           //Check x coordinate
-          f=strtod((*++itField).c_str(),NULL);    
+          f = strtod((*++itField).c_str(),NULL);    
           std::cout << "\t actual\t" << f << std::endl;
-          std::cout << "\t desired\t" << strtod(x1.c_str(),NULL)<< std::endl;
-          std::cout << "\t Difference\t" << abs(f-strtod(x1.c_str(),NULL))<< std::endl;
-          if (abs(f-strtod(x1.c_str(),NULL))<.0001) {
+          std::cout << "\t desired\t" << x1<< std::endl;
+          std::cout << "\t Difference\t" << abs(f-x1)<< std::endl;
+          if (abs(f-x1)<.0001) {
             std::cout << "MATCH!\n";
           } else {
             good_antenna_locations=false;
-            std::cout << f <<"\t"<<strtod(x1.c_str(),NULL) << "\n";
+            std::cout << f <<"\t"<<x1 << "\n";
             std::cout << "MISMATCH!\n";
           }
           //Check y coordinate
-          f=strtod((*++itField).c_str(),NULL);
+          f = strtod((*++itField).c_str(),NULL);
           std::cout << "\t actual\t" << f << std::endl;
-          std::cout << "\t desired\t" << strtod(y1.c_str(),NULL) << std::endl;
-          std::cout << "\t Difference\t" << abs(f-strtod(y1.c_str(),NULL)) << std::endl;
-          if (abs(f-strtod(y1.c_str(),NULL))<.0001) {
+          std::cout << "\t desired\t" << y1 << std::endl;
+          std::cout << "\t Difference\t" << abs(f-y1) << std::endl;
+          if (abs(f-y1)<.0001) {
             std::cout << "MATCH!\n";
           } else {
             good_antenna_locations=false;
-            std::cout << f <<"\t" << strtod(y1.c_str(),NULL) << "\n";
+            std::cout << f <<"\t" << y1 << "\n";
             std::cout << "MISMATCH!\n";
           }
           //Check z coordinate
-          f=strtod((*++itField).c_str(),NULL);
+          f = strtod((*++itField).c_str(),NULL);
           std::cout << "\t actual\t" << f << std::endl;
-          std::cout << "\t desired\t" << strtod(z1.c_str(),NULL) << std::endl;
-          std::cout << "\t Difference\t" << abs(f-strtod(z1.c_str(),NULL)) << std::endl;
-          if (abs(f-strtod(z1.c_str(),NULL))<.0001) {
+          std::cout << "\t desired\t" << z1 << std::endl;
+          std::cout << "\t Difference\t" << abs(f-z1) << std::endl;
+          if (abs(f-z1)<.0001) {
             std::cout << "MATCH!\n";
           } else {
             good_antenna_locations=false;
-            std::cout << f << "\t" <<strtod(z1.c_str(),NULL) << "\n";
+            std::cout << f << "\t" <<z1 << "\n";
             std::cout << "MISMATCH!\n ";
           }
         } else if (i==2) {
@@ -452,37 +461,37 @@ void Septentrio::ParseASCII(unsigned char* block)
           //Check x coordinate
           f = strtod((*++itField).c_str(),NULL);
           std::cout << "\t actual\t" << f << std::endl;
-          std::cout << "\t desired\t" << strtod(x2.c_str(),NULL) << std::endl;
-          std::cout << "\t Difference\t" << abs(f-strtod(x2.c_str(),NULL)) << std::endl;
-          if (abs(f-strtod(x2.c_str(),NULL))<.0001) {
+          std::cout << "\t desired\t" << x2 << std::endl;
+          std::cout << "\t Difference\t" << abs(f-x2) << std::endl;
+          if (abs(f-x2)<.0001) {
             std::cout << "MATCH!\n";
           } else {
             good_antenna_locations = false;
-            std::cout << f <<"\t" << strtod(x2.c_str(),NULL) <<"\n";
+            std::cout << f <<"\t" << x2 <<"\n";
             std::cout << "MISMATCH!\n";
           }
           //Check y coordinate
           f = strtod((*++itField).c_str(),NULL);
           std::cout << "\t actual\t" << f << std::endl;
-          std::cout << "\t desired\t" << strtod(y2.c_str(),NULL) << std::endl;
-          std::cout << "\t Difference\t" << abs(f-strtod(y2.c_str(),NULL))<< std::endl;
-          if (abs(f-strtod(y2.c_str(),NULL))<.0001) {
+          std::cout << "\t desired\t" << y2 << std::endl;
+          std::cout << "\t Difference\t" << abs(f-y2)<< std::endl;
+          if (abs(f-y2)<.0001) {
             std::cout << "MATCH!\n";
           } else {
             good_antenna_locations=false;
-            std::cout << f << "\t" << strtod(y2.c_str(),NULL) << "\n";
+            std::cout << f << "\t" << y2 << "\n";
             std::cout << "MISMATCH!\n";
           }
           //Check z coordinate
-          f=strtod((*++itField).c_str(),NULL);
+          f = strtod((*++itField).c_str(),NULL);
           std::cout << "\t actual\t" << f << std::endl;
-          std::cout << "\t desired\t" << strtod(z2.c_str(),NULL) << std::endl;
-          std::cout << "\t Difference\t" << abs(f-strtod(z2.c_str(),NULL)) << std::endl;
-          if (abs(f-strtod(z2.c_str(),NULL))<.0001) {
+          std::cout << "\t desired\t" << z2 << std::endl;
+          std::cout << "\t Difference\t" << abs(f-z2) << std::endl;
+          if (abs(f-z2)<.0001) {
             std::cout << "MATCH!\n";
           } else {
             good_antenna_locations=false;
-            std::cout << f <<"\t" << strtod(z2.c_str(),NULL) << "\n";
+            std::cout << f <<"\t" << z2 << "\n";
             std::cout << "MISMATCH!\n";
           }
         }
@@ -565,23 +574,22 @@ void Septentrio::ParseBinary(unsigned char* block, unsigned short ID)
 }
 
 
-bool Septentrio::SetAntennaLocations(int ant_num, std::string x, std::string y, std::string z)
+bool Septentrio::setAntennaLocations(int ant_num, double x, double y, double z)
 {
-  std::string cmd;
-
-  if (ant_num==1) {
-    cmd = "SetAntennaLocation manual 1 " + x + " " + y + " " + z + "\r\n";
-    return (serial_port->write(cmd)==cmd.length());
-  } else if (ant_num==2) {
-    cmd = "SetAntennaLocation manual 2 " + x + " " + y + " " + z + "\r\n";
-    return (serial_port->write(cmd)==cmd.length());
-  } else {
-    // MOOSTrace("ERROR!!!!\n");
-    return 0;
+  if ((ant_num != 1) && (ant_num != 2)) {
+    // TODO:  log error here
+    return false;
   }
-
+  x1 = x;
+  y1 = y;
+  z1 = z;
+  std::stringstream cmd;
+  cmd <<"SetAntennaLocation manual " << ant_num << " " << x << " " << y << " " << z << "\r\n";
+  return (serial_port->write(cmd.str())==cmd.str().length());
   //TODO: check for acknowledgement from receiver??
+  // TODO: check positions??
 }
+
 
 // void Septentrio::SetRTK(string RTK_com,string RTK_baud,string RTK_correction_type)
 // {

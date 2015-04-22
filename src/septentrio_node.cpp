@@ -4,22 +4,18 @@
 #include <septentrio/septentrio_node.h>
 
 
-inline void printHex(char *data, int length) {
-    for (int i = 0; i < length; ++i) {
-        printf("0x%.2X ", (unsigned) (unsigned char) data[i]);
-    }
-    printf("\n");
-}
-
-
 SeptentrioNode::SeptentrioNode()
 {
+  std::string name_ = ros::this_node::getName();
+
   // receiver_time_pub =       nh.advertise<septentrio::>
-  pvt_cartesian_pub =       nh.advertise<septentrio::PvtCartesianMsg>(    "pvt_cartesian",      1000);
-  pos_cov_cartesian_pub =   nh.advertise<septentrio::PosCovCartesianMsg>( "pos_cov_cartesian",  1000);
-  vel_cov_cartesian_pub =   nh.advertise<septentrio::VelCovCartesianMsg>( "vel_cov_cartesian",  1000);
-  attitude_euler_pub =      nh.advertise<septentrio::AttitudeEulerMsg>(   "attitude_euler",     1000);
-  attitude_cov_euler_pub =  nh.advertise<septentrio::AttitudeCovEulerMsg>("attitude_cov_euler", 1000);
+  pvt_cartesian_pub =       nh.advertise<septentrio::PvtCartesianMsg>(    name_+"/pvt_cartesian",      1000);
+  pos_cov_cartesian_pub =   nh.advertise<septentrio::PosCovCartesianMsg>( name_+"/pos_cov_cartesian",  1000);
+  vel_cov_cartesian_pub =   nh.advertise<septentrio::VelCovCartesianMsg>( name_+"/vel_cov_cartesian",  1000);
+  attitude_euler_pub =      nh.advertise<septentrio::AttitudeEulerMsg>(   name_+"/attitude_euler",     1000);
+  attitude_cov_euler_pub =  nh.advertise<septentrio::AttitudeCovEulerMsg>(name_+"/attitude_cov_euler", 1000);
+
+  gps.setTimeHandler(boost::bind(&SeptentrioNode::getTimeHandler, this));
 
   // setReceiverTimeCallback
   gps.setPvtCartesianCallback(     boost::bind(&SeptentrioNode::pvtCartestianCallback,    this, _1, _2) );
@@ -28,21 +24,38 @@ SeptentrioNode::SeptentrioNode()
   gps.setAttitudeEulerCallback(    boost::bind(&SeptentrioNode::attitudeEulerCallback,    this, _1, _2) );
   gps.setAttitudeCovEulerCallback( boost::bind(&SeptentrioNode::attitudeCovEulerCallback, this, _1, _2) );
 
+  // get params, rosparams
   std::string port_, sep_port_, output_rate_, range_output_rate_;
   int baud_;
-  std::string name_ = ros::this_node::getName();
+  std::map<std::string,double> antenna_1_loc_, antenna_2_loc_;
   nh.getParam(name_+"/port", port_);
   nh.getParam(name_+"/baudrate", baud_);
   nh.getParam(name_+"/septentrio_port", sep_port_);
   nh.getParam(name_+"/output_rate"      , output_rate_);
   nh.getParam(name_+"/range_output_rate", range_output_rate_);
-  ROS_INFO_STREAM("Septentrio:\n\tPort: " << port_ << 
+  nh.getParam(name_+"/antenna_location/1", antenna_1_loc_);
+  nh.getParam(name_+"/antenna_location/2", antenna_2_loc_);
+  ROS_INFO_STREAM("Septentrio:" <<
+                  "\n\tPort: " << port_ << 
                   "\n\tBaud: " << baud_ <<
-                  "\n\tSeptentrio Port: " << sep_port_ << "\n");
+                  "\n\tSeptentrio Port: " << sep_port_ <<
+                  "\n\tOutput Rate: " << output_rate_ <<
+                  "\n\tRange Output Rate: " << range_output_rate_ <<
+                  "\n\tAntenna 1 location:" << 
+                  "\n\t\tx: " << antenna_1_loc_["x"] << 
+                  "\n\t\ty: " << antenna_1_loc_["y"] <<
+                  "\n\t\tz: " << antenna_1_loc_["z"] <<
+                  "\n\tAntenna 2 location: " <<
+                  "\n\t\tx: " << antenna_2_loc_["x"] <<
+                  "\n\t\ty: " << antenna_2_loc_["y"] <<
+                  "\n\t\tz: " << antenna_2_loc_["z"]
+                  );
   try {
     gps.connect(port_, baud_, sep_port_);
     gps.setOutputRate(output_rate_);
     gps.setRangeOutputRate(range_output_rate_);
+    gps.setAntennaLocations(1, antenna_1_loc_["x"], antenna_1_loc_["y"], antenna_1_loc_["z"]);
+    gps.setAntennaLocations(2, antenna_2_loc_["x"], antenna_2_loc_["y"], antenna_2_loc_["z"]);
   } catch (std::exception e) {
     std::cout << "Error in connecting" << std::endl;
   }
@@ -64,7 +77,7 @@ SeptentrioNode::SeptentrioNode()
   std::cout << std::endl;
 }
 
-double SeptentrioNode::getTimeCallback()
+double SeptentrioNode::getTimeHandler()
 {
   return ros::Time::now().toSec();
 }
@@ -78,6 +91,7 @@ void SeptentrioNode::pvtCartestianCallback(PvtCartesian& data, double& read_stam
 {
   // pvt_cartesian = data;
   septentrio::PvtCartesianMsg msg;
+  msg.header.stamp = ros::Time().fromSec(read_stamp);
   msg.GPS_ms      = data.GPS_ms;
   msg.weekNumber  = data.weekNumber;
   msg.numSat      = data.numSat;
@@ -104,6 +118,7 @@ void SeptentrioNode::pvtCartestianCallback(PvtCartesian& data, double& read_stam
 void SeptentrioNode::posCovCartesianCallback(PosCovCartesian& data, double& read_stamp)
 {
   septentrio::PosCovCartesianMsg msg;
+  msg.header.stamp = ros::Time().fromSec(read_stamp);
   msg.GPS_ms     = data.GPS_ms;    
   msg.weekNumber = data.weekNumber;        
   msg.reserved   = data.reserved;      
@@ -125,6 +140,7 @@ void SeptentrioNode::posCovCartesianCallback(PosCovCartesian& data, double& read
 void SeptentrioNode::velCovCaresianCallback(VelCovCartesian& data, double& read_stamp)
 {
   septentrio::VelCovCartesianMsg msg;
+  msg.header.stamp = ros::Time().fromSec(read_stamp);
   msg.GPS_ms     = data.GPS_ms;
   msg.weekNumber = data.weekNumber;
   msg.reserved   = data.reserved;
@@ -146,6 +162,7 @@ void SeptentrioNode::velCovCaresianCallback(VelCovCartesian& data, double& read_
 void SeptentrioNode::attitudeEulerCallback(AttitudeEuler& data, double& read_stamp)
 {
   septentrio::AttitudeEulerMsg msg;
+  msg.header.stamp = ros::Time().fromSec(read_stamp);
   msg.GPS_ms     = data.GPS_ms;
   msg.weekNumber = data.weekNumber;
   msg.numSat     = data.numSat;
@@ -165,6 +182,7 @@ void SeptentrioNode::attitudeEulerCallback(AttitudeEuler& data, double& read_sta
 void SeptentrioNode::attitudeCovEulerCallback(AttitudeCovEuler& data, double& read_stamp)
 {
   septentrio::AttitudeCovEulerMsg msg;
+  msg.header.stamp = ros::Time().fromSec(read_stamp);
   msg.GPS_ms      = data.GPS_ms;
   msg.weekNumber  = data.weekNumber;
   msg.reserved    = data.reserved;
