@@ -57,24 +57,28 @@ SeptentrioNode::SeptentrioNode()
     gps.setAntennaLocations(1, antenna_1_loc_["x"], antenna_1_loc_["y"], antenna_1_loc_["z"]);
     gps.setAntennaLocations(2, antenna_2_loc_["x"], antenna_2_loc_["y"], antenna_2_loc_["z"]);
   } catch (std::exception e) {
-    std::cout << "Error in connecting" << std::endl;
+    ROS_ERROR_STREAM("Error in connecting: " << e.what());
   }
   if (!gps.isConnected()) {
-    std::cout << "Did not connect." << std::endl;
+    ROS_ERROR_STREAM("Did not connect.");
   } else {
     ROS_INFO_STREAM("Septentrio connected!\n");
   }
   
-  std::vector<std::string> logs_;
-  nh.getParam(name_+"/logs", logs_);
-  std::cout << "Septentrio requesting logs: ";
-  for (std::vector<std::string>::iterator it=logs_.begin(); it!=logs_.end(); ++it) {
-    if (!gps.requestLog(*it)) {
-      ROS_WARN_STREAM("Couldn't request desired logs: " << *it);
+  try {
+    std::vector<std::string> logs_;
+    nh.getParam(name_+"/logs", logs_);
+    std::cout << "Septentrio requesting logs: ";
+    for (std::vector<std::string>::iterator it=logs_.begin(); it!=logs_.end(); ++it) {
+      if (!gps.requestLog(*it)) {
+        ROS_WARN_STREAM("Couldn't request desired logs: " << *it);
+      }
+      std::cout << *it << ", ";
     }
-    std::cout << *it << ", ";
+    std::cout << std::endl;
+  } catch (std::exception e) {
+    ROS_ERROR_STREAM("Couldn't configure logs: " << e.what());
   }
-  std::cout << std::endl;
 }
 
 double SeptentrioNode::getTimeHandler()
