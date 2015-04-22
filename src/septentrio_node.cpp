@@ -13,6 +13,27 @@ SeptentrioNode::SeptentrioNode()
   // vel_cov_cartesian_pub =   nh.advertise<septentrio::>
   // attitude_euler_pub =      nh.advertise<septentrio::>
   // attitude_cov_euler_pub =  nh.advertise<septentrio::>
+
+  // setReceiverTimeCallback
+  gps.setPvtCartesianCallback(boost::bind(&SeptentrioNode::pvtCartestianCallback, this, _1, _2));
+  // setPosCovCartesianCallback
+  // setVelCovCaresianCallback
+  // setAttitudeEulerCallback
+  // setAttitudeCovEulerCallback
+
+  std::string port_, sep_port_;
+  int baud_;
+  nh.getParam("~port", port_);
+  nh.getParam("~baudrate", baud_);
+  nh.getParam("~septentrio_port", sep_port_)  ;
+  try {
+    gps.connect(port_, baud_, sep_port_);
+  } catch (std::exception e) {
+    std::cout << "Error in connecting" << std::endl;
+  }
+  if (!gps.isConnected()) {
+    std::cout << "Did not connect." << std::endl;
+  }
 }
 
 double SeptentrioNode::getTimeCallback()

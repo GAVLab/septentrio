@@ -177,8 +177,8 @@ bool Septentrio::connect(std::string port, int baudrate, std::string septentrio_
   startReading();
   is_connected = true;
 
-  std::string galcmd;
-  
+  // set manual position
+  std::string galcmd;  
   if (manual_position) {
     std::cout << "manual position true\t" << x2 << std::endl;
     galcmd = "gal\r\n";
