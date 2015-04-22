@@ -36,7 +36,7 @@ class SeptentrioNode {
     ////////////////////
     // ROS attributes // 
     ////////////////////
-    
+
     ros::NodeHandle nh;
     ros::Publisher receiver_time_pub;
     ros::Publisher pvt_cartesian_pub;
@@ -47,5 +47,6 @@ class SeptentrioNode {
 
     // driver object
     Septentrio gps;
+    
 
 };

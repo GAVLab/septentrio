@@ -74,13 +74,21 @@ class Septentrio {
 
     bool clearLog(); //!< turn off logs
     bool requestLog(std::string logcode_); //!< request an additional Block from the receiver
+    
     bool setOutputRate(std::string r); //!< request the PVT log rate
     bool setRangeOutputRate(std::string r); //!< request the Meas (range) log rate   
+    
     bool setAntennaLocations(int ant_num, double x, double y, double z);
+
+    void setRTK(std::string rtk_port, int rtk_baud, std::string rtk_format);
+    void setRTK(); // turn off RTK
+
 
     //////////////////////////////
     // message callback setters //
     //////////////////////////////
+
+    inline void setTimeHandler(GetTimeHandler h) {time_handler=h;};
 
     inline void setReceiverTimeCallback(ReceiverTimeCallback c) {receiver_time_callback = c;};
     inline void setPvtCartesianCallback(PvtCartesianCallback c) {pvt_cartesian_callback = c;};
@@ -88,8 +96,6 @@ class Septentrio {
     inline void setVelCovCaresianCallback(VelCovCaresianCallback c) {vel_cov_cartesian_callback = c;};
     inline void setAttitudeEulerCallback(AttitudeEulerCallback c) {attitude_euler_callback = c;};
     inline void setAttitudeCovEulerCallback(AttitudeCovEulerCallback c) {attitude_cov_euler_callback = c;};
-
-    inline void setTimeHandler(GetTimeHandler h) {time_handler=h;};
 
   private:
 
@@ -139,6 +145,8 @@ class Septentrio {
     // stuff that gets stored for the parse function
     Header latest_header;
     ReceiverTime latest_receivertime;
+
+    bool is_rtk; // whether we're in RTK mode
 
     ///////////////////////
     // callback handlers //

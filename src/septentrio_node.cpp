@@ -50,6 +50,7 @@ SeptentrioNode::SeptentrioNode()
                   "\n\t\ty: " << antenna_2_loc_["y"] <<
                   "\n\t\tz: " << antenna_2_loc_["z"]
                   );
+  // hook it up to the septentrio
   try {
     gps.connect(port_, baud_, sep_port_);
   } catch (std::exception e) {
@@ -60,13 +61,13 @@ SeptentrioNode::SeptentrioNode()
   } else {
     ROS_INFO_STREAM("Septentrio connected!\n");
   }
-  
+  // configure the already-connected receiver
   gps.setOutputRate(output_rate_);
   gps.setRangeOutputRate(range_output_rate_);
   gps.setAntennaLocations(1, antenna_1_loc_["x"], antenna_1_loc_["y"], antenna_1_loc_["z"]);
   gps.setAntennaLocations(2, antenna_2_loc_["x"], antenna_2_loc_["y"], antenna_2_loc_["z"]);
   ROS_INFO_STREAM("Septentrio configuration done.");
-  
+  // request logs
   try {
     std::vector<std::string> logs_;
     nh.getParam(name_+"/logs", logs_);
@@ -80,6 +81,11 @@ SeptentrioNode::SeptentrioNode()
     std::cout << std::endl;
   } catch (std::exception e) {
     ROS_ERROR_STREAM("Couldn't configure logs: " << e.what());
+  }
+  // check for RTK request
+  std::map<std::string,std::string> rtk_;
+  if (nh.getParam(name_+"/rtk", rtk_)) {
+   gps.setRTK(rtk_["port"], atoi(rtk_["baud"].c_str()), rtk_["format"]);
   }
 }
 
@@ -139,6 +145,9 @@ void SeptentrioNode::posCovCartesianCallback(PosCovCartesian& data, double& read
   msg.Cov_yz     = data.Cov_yz;    
   msg.Cov_yb     = data.Cov_yb;    
   msg.Cov_zb     = data.Cov_zb;
+
+  // TODO: if in RTK mode: check cov to make sure it's as low as it should be
+
   pos_cov_cartesian_pub.publish(msg);
 }
 

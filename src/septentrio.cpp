@@ -277,7 +277,7 @@ void Septentrio::readSerialPort() {
 bool Septentrio::clearLog()
 {
   log_codes.clear();
-  std::string cmd="SetSBFOutput " + septentrio_port + ", " + "\r\n";
+  std::string cmd="SetSBFOutput " + septentrio_port + ", off " + "\r\n";
   return (serial_port->write(cmd)==cmd.length());
 }
 
@@ -285,7 +285,7 @@ bool Septentrio::requestLog(std::string logcode_)
 {
   log_codes.push_back(logcode_);
   std::string cmd = boost::algorithm::join(log_codes, "+");
-  cmd = "SetSBFOutput " + septentrio_port + ", " + cmd + "\r\n";
+  cmd = "SetSBFOutput " + septentrio_port + ", " + cmd + " \r\n";
   std::cout << "Septentrio::requestLog sending request for: " << cmd << std::endl;
   return (serial_port->write(cmd)==cmd.length());
 }
@@ -588,18 +588,23 @@ bool Septentrio::setAntennaLocations(int ant_num, double x, double y, double z)
   return (serial_port->write(cmd.str())==cmd.str().length());
   //TODO: check for acknowledgement from receiver??
   // TODO: check positions??
+  // TODO: merge this with the stuff in ParseASCII??
 }
 
 
-// void Septentrio::SetRTK(string RTK_com,string RTK_baud,string RTK_correction_type)
-// {
-//   string cmd;
-
-//   cmd="SetPVTMode standalone+RTK \r\n";
-//   SendString(cmd)==cmd.length();
-//   cmd="Set"+RTK_correction_type+"iNput "+RTK_com+" \r\n";
-//   SendString(cmd)==cmd.length();
-//   cmd="SetComSettings "+RTK_com+" "+RTK_baud+" \r\n";
-//   SendString(cmd)==cmd.length();
-
-// }
+void Septentrio::setRTK(std::string rtk_port, int rtk_baud, std::string rtk_format)
+{
+  //! TODO: check to make sure that rtk_type is one of the 3 supported options
+  serial_port->write("SetPVTMode standalone+RTK \r\n");
+  std::stringstream cmd;
+  cmd << "Set" << rtk_format << "iNput " << rtk_port << " \r\n";
+  serial_port->write(cmd.str());
+  cmd.str(std::string());
+  cmd << "SetComSettings " << rtk_port << " " << rtk_baud << " \r\n";
+  serial_port->write(cmd.str()); 
+  // TODO: check output in ASCII
+  // TODO: make this a bool function
+  // TODO: check the covariance of output solution to make sure it's as low as
+  //       an RTK solution should be.
+  is_rtk = true;
+}
