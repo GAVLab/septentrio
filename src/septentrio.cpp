@@ -592,7 +592,7 @@ bool Septentrio::setAntennaLocations(int ant_num, double x, double y, double z)
 }
 
 
-void Septentrio::setRTK(std::string rtk_port, int rtk_baud, std::string rtk_format)
+bool Septentrio::setRTK(std::string rtk_port, int rtk_baud, std::string rtk_format)
 {
   //! TODO: check to make sure that rtk_type is one of the 3 supported options
   serial_port->write("SetPVTMode standalone+RTK \r\n");
@@ -607,4 +607,13 @@ void Septentrio::setRTK(std::string rtk_port, int rtk_baud, std::string rtk_form
   // TODO: check the covariance of output solution to make sure it's as low as
   //       an RTK solution should be.
   is_rtk = true;
+  return true;
+}
+
+
+bool Septentrio::setRTK()
+{
+  serial_port->write("SetPVTMode standalone \r\n");
+  is_rtk = false;
+  return true;
 }

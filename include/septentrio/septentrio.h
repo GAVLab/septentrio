@@ -80,8 +80,8 @@ class Septentrio {
     
     bool setAntennaLocations(int ant_num, double x, double y, double z);
 
-    void setRTK(std::string rtk_port, int rtk_baud, std::string rtk_format);
-    void setRTK(); // turn off RTK
+    bool setRTK(std::string rtk_port, int rtk_baud, std::string rtk_format);
+    bool setRTK(); // turn off RTK
 
 
     //////////////////////////////
