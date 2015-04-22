@@ -62,12 +62,13 @@
 
     <!-- 
       format options: RTCM3, RTCM, CMR
+        - for NTRIP from Lefebure, use RTCM
       Port: which port on the septentrio board
      -->
     <rosparam param="rtk">
       port: COM2
       baud: 115200
-      format: RTCM3
+      format: RTCM
     </rosparam>
 
   </node>
