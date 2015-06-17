@@ -7,6 +7,7 @@ project(septentrio)
 find_package(catkin REQUIRED
   COMPONENTS
     roscpp
+    rospy
     serial
     std_msgs
     message_generation
@@ -92,7 +93,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES septentrio
-  CATKIN_DEPENDS roscpp serial std_msgs
+  CATKIN_DEPENDS roscpp serial std_msgs rospy
   DEPENDS system_lib
 )
 
