@@ -1,0 +1,26 @@
+<!-- 
+
+  IMPORTANT!!!!
+
+  If you feel the need to modify this file, DON'T... Not unless it reflects some
+  change in the driver source code or assosciated ROS wrapper.
+
+  If you are simply trying to modify the launch file for your specific scenario:
+    1. create a copy of this file in the `launch` folder
+    2. rename it intelligently
+    3. include comments about what the launch does and is used for
+
+
+@author: Robert Cofield
+
+-->
+
+
+<launch>
+  <include file="$(find septentrio)/launch/septentrio.launch"/>
+
+  <node name="tf_track_local" pkg="tf" type="static_transform_publisher"
+  args="659654.674572 3607973.45147 0 0 0 0 /utm /track 100"
+  required="true" output="screen" />
+
+</launch>
