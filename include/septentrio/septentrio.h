@@ -15,7 +15,8 @@
 #define _SEPTENTRIO_H
 
 #define MAX_MSG_SIZE 4096 //!< see header message length
-#define MAX_NOUT_SIZE (5000)   // Maximum size of a NovAtel log buffer (ALMANAC logs are big!)
+// #define MAX_NOUT_SIZE (5000)   // Maximum size of a NovAtel log buffer (ALMANAC logs are big!)
+#define MAX_NOUT_SIZE 4096   // Maximum size of a NovAtel log buffer (ALMANAC logs are big!)
 
 #define SEP_SYNC_BYTE_1 0x24 //0x24 is ASCII for $ - 1st byte in each message
 #define SEP_SYNC_BYTE_2 0x40 //0x24 is ASCII for @ - 2nd byte to indicate Binary message

@@ -138,7 +138,9 @@ Septentrio::~Septentrio()
 bool Septentrio::connect(std::string port, int baudrate, std::string septentrio_port_)
 {
   septentrio_port = septentrio_port_;
-  serial::Timeout my_timeout(100, 1000, 0, 1000, 0);
+  // serial::Timeout my_timeout(100, 1000, 0, 1000, 0);
+  // serial::Timeout my_timeout = serial::Timeout::simpleTimeout(1);
+  serial::Timeout my_timeout(0, 2, 0, 2, 0);
   try {
     serial_port = new serial::Serial(port, baudrate, my_timeout);
     if (!serial_port->isOpen()) {
