@@ -115,13 +115,13 @@ void SeptentrioNode::receiverTimeCallback(ReceiverTime& data, double& read_stamp
 //  SteptentrioNode::OdometryCallback  [Private]  --- publishes standard odometry message
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SeptentrioNode::OdometryCallback(OdometryData& data,double& read_stamp){
-	nav_msgs::odometry msg;
-	msg.header.stamp=ros::Time().fromSec(read_stamp)
-	msg.header.child_frame_id="ECEF";
+	nav_msgs::Odometry msg;
+	msg.header.stamp=ros::Time().fromSec(read_stamp);
+	msg.header.frame_id="ECEF";
 	msg.pose.pose.position.x=data.pvt.x_position;
 	msg.pose.pose.position.y=data.pvt.y_position;
 	msg.pose.pose.position.z=data.pvt.z_position;
-	msg.pose.pose.orientation tf::createQuaternionMsgFromRollPitchYaw(data.att.roll * degrees_to_radians,data.att.pitch * degrees_to_radians,psi2theta(data.att.heading * degrees_to_radians));
+	msg.pose.pose.orientation=tf::createQuaternionMsgFromRollPitchYaw(data.att.roll * degrees_to_radians,data.att.pitch * degrees_to_radians,psi2theta(data.att.heading * degrees_to_radians));
 	msg.pose.covariance[0]=data.pos_cov.Cov_xx;
 	msg.pose.covariance[1]=data.pos_cov.Cov_xy;
 	msg.pose.covariance[2]=data.pos_cov.Cov_xz;
@@ -135,12 +135,12 @@ void SeptentrioNode::OdometryCallback(OdometryData& data,double& read_stamp){
 	msg.pose.covariance[28]=data.att_cov.var_pitch;
 	msg.pose.covariance[35]=data.att_cov.var_heading;
 
-	msg.twist.twist.linear.x=data.pvt.x_velocity
-	msg.twist.twist.linear.y=data.pvt.y_velocity
-	msg.twist.twist.linear.z=data.pvt.z_velocity
-	msg.twist.twist.angular.x=att.x_omega;
-	msg.twist.twist.angular.y=att.y_omega;
-	msg.twist.twist.angular.z=att.z_omega;
+	msg.twist.twist.linear.x=data.pvt.x_velocity;
+	msg.twist.twist.linear.y=data.pvt.y_velocity;
+	msg.twist.twist.linear.z=data.pvt.z_velocity;
+	msg.twist.twist.angular.x=data.att.x_omega;
+	msg.twist.twist.angular.y=data.att.y_omega;
+	msg.twist.twist.angular.z=data.att.z_omega;
 	msg.twist.covariance[0]=data.vel_cov.Cov_VxVx;
 	msg.twist.covariance[1]=data.vel_cov.Cov_VxVy;
 	msg.twist.covariance[2]=data.vel_cov.Cov_VxVz;

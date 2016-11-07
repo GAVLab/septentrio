@@ -551,7 +551,7 @@ void Septentrio::ParseBinary(unsigned char* block, unsigned short ID)
     case 5907:
       memcpy(&latest_pvtxyz_vel_cov_, block+8, sizeof(latest_pvtxyz_vel_cov_));
       vel_cov_cartesian_callback(latest_pvtxyz_vel_cov_, read_timestamp);
-      latest_odometry_data_.vel_cov=latest_pvtxyz_vel_cov;
+      latest_odometry_data_.vel_cov=latest_pvtxyz_vel_cov_;
       break;
 
     // Attitude expressed as Euler Angle 
