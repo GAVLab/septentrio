@@ -14,6 +14,8 @@ SeptentrioNode::SeptentrioNode()
   vel_cov_cartesian_pub =   nh.advertise<septentrio::VelCovCartesianMsg>( name_+"/vel_cov_cartesian",  1000);
   attitude_euler_pub =      nh.advertise<septentrio::AttitudeEulerMsg>(   name_+"/attitude_euler",     1000);
   attitude_cov_euler_pub =  nh.advertise<septentrio::AttitudeCovEulerMsg>(name_+"/attitude_cov_euler", 1000);
+  odom_pub_ =nh.advertise<nav_msgs::Odometry>(name_+"/odom", 0),
+
 
   gps.setTimeHandler(boost::bind(&SeptentrioNode::getTimeHandler, this));
 
@@ -23,6 +25,7 @@ SeptentrioNode::SeptentrioNode()
   gps.setVelCovCaresianCallback(   boost::bind(&SeptentrioNode::velCovCaresianCallback,   this, _1, _2) );
   gps.setAttitudeEulerCallback(    boost::bind(&SeptentrioNode::attitudeEulerCallback,    this, _1, _2) );
   gps.setAttitudeCovEulerCallback( boost::bind(&SeptentrioNode::attitudeCovEulerCallback, this, _1, _2) );
+  gps.setOdometryCallback(boost::bind(&SeptentrioNode::OdometryCallback,this, _1,_2));
 
   // get params, rosparams
   std::string port_, sep_port_, output_rate_, range_output_rate_;
@@ -105,6 +108,50 @@ double SeptentrioNode::getTimeHandler()
 
 void SeptentrioNode::receiverTimeCallback(ReceiverTime& data, double& read_stamp)
 {
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//  SteptentrioNode::OdometryCallback  [Private]  --- publishes standard odometry message
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void SeptentrioNode::OdometryCallback(OdometryData& data,double& read_stamp){
+	nav_msgs::odometry msg;
+	msg.header.stamp=ros::Time().fromSec(read_stamp)
+	msg.header.child_frame_id="ECEF";
+	msg.pose.pose.position.x=data.pvt.x_position;
+	msg.pose.pose.position.y=data.pvt.y_position;
+	msg.pose.pose.position.z=data.pvt.z_position;
+	msg.pose.pose.orientation tf::createQuaternionMsgFromRollPitchYaw(data.att.roll * degrees_to_radians,data.att.pitch * degrees_to_radians,psi2theta(data.att.heading * degrees_to_radians));
+	msg.pose.covariance[0]=data.pos_cov.Cov_xx;
+	msg.pose.covariance[1]=data.pos_cov.Cov_xy;
+	msg.pose.covariance[2]=data.pos_cov.Cov_xz;
+	msg.pose.covariance[6]=data.pos_cov.Cov_xy;
+	msg.pose.covariance[7]=data.pos_cov.Cov_yy;
+	msg.pose.covariance[8]=data.pos_cov.Cov_yz;
+	msg.pose.covariance[12]=data.pos_cov.Cov_xz;
+	msg.pose.covariance[13]=data.pos_cov.Cov_yz;
+	msg.pose.covariance[14]=data.pos_cov.Cov_zz;
+	msg.pose.covariance[21]=data.att_cov.var_roll;
+	msg.pose.covariance[28]=data.att_cov.var_pitch;
+	msg.pose.covariance[35]=data.att_cov.var_heading;
+
+	msg.twist.twist.linear.x=data.pvt.x_velocity
+	msg.twist.twist.linear.y=data.pvt.y_velocity
+	msg.twist.twist.linear.z=data.pvt.z_velocity
+	msg.twist.twist.angular.x=att.x_omega;
+	msg.twist.twist.angular.y=att.y_omega;
+	msg.twist.twist.angular.z=att.z_omega;
+	msg.twist.covariance[0]=data.vel_cov.Cov_VxVx;
+	msg.twist.covariance[1]=data.vel_cov.Cov_VxVy;
+	msg.twist.covariance[2]=data.vel_cov.Cov_VxVz;
+	msg.twist.covariance[6]=data.vel_cov.Cov_VxVy;
+	msg.twist.covariance[7]=data.vel_cov.Cov_VyVy;
+	msg.twist.covariance[8]=data.vel_cov.Cov_VyVz;
+	msg.twist.covariance[12]=data.vel_cov.Cov_VxVz;
+	msg.twist.covariance[13]=data.vel_cov.Cov_VyVz;
+	msg.twist.covariance[14]=data.vel_cov.Cov_VzVz;
+
+
 }
 
 

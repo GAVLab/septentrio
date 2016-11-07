@@ -14,7 +14,7 @@ inline void printHex(char *data, int length) {
 }
 
 
-double defaultGetTimeHandler() {
+double defaultGetTimeHandler() {  // I think I want to do this as a chrono
   boost::posix_time::ptime present_time(
           boost::posix_time::microsec_clock::universal_time());
   boost::posix_time::time_duration duration(present_time.time_of_day());
@@ -51,6 +51,10 @@ void defaultAttitudeCovEulerCallback(AttitudeCovEuler& data, double& cpu_stamp) 
   std::cout << "defaultAttitudeCovEulerCallback: Received AttitudeCovEuler" << std::endl;
 }
 
+void defaultOdometryCallback(OdometryData& data, double& cpu_stamp){
+  std::cout << "defaultOdometryCallback: Received OdometryData" << std::endl;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 Septentrio::Septentrio()
@@ -69,6 +73,7 @@ Septentrio::Septentrio()
   vel_cov_cartesian_callback =      defaultVelCovCartesianCallback;
   attitude_euler_callback =         defaultAttitudeEulerCallback;
   attitude_cov_euler_callback =     defaultAttitudeCovEulerCallback;
+  odometry_callback_ =				defaultOdometryCallback;
   
   output_rate = "1";
   range_output_rate = "1";
@@ -352,13 +357,13 @@ void Septentrio::bufferIncomingData(uint8_t *msg, size_t length)
         dataBuf[bufIndex++]=msg[i]; 
         //we should have the entire header now
         if (!readingASCII) {
-          memcpy(&latest_header, dataBuf, 8);
-          bytesRemaining = latest_header.Length - 8;//!< How many bytes are left to read in the message
+          memcpy(&latest_header_, dataBuf, 8);
+          bytesRemaining = latest_header_.Length - 8;//!< How many bytes are left to read in the message
         }
     } else if (bytesRemaining==1) { // add last byte and parse
       // std::cout<<"(bytesRemaining==1)\n";
       dataBuf[bufIndex++]=msg[i];
-      ParseBinary(dataBuf,latest_header.ID);
+      ParseBinary(dataBuf,latest_header_.ID);
       // reset counters
       bufIndex=0;
       bytesRemaining=0;
@@ -521,43 +526,46 @@ void Septentrio::ParseBinary(unsigned char* block, unsigned short ID)
   switch(ID) {
     // Reciever time (Current GPS and UTC time)
     case 5914:
-      memcpy(&latest_receivertime, block+8, sizeof(latest_receivertime));
-      receiver_time_callback(latest_receivertime, read_timestamp);
+      memcpy(&latest_receivertime_, block+8, sizeof(latest_receivertime_));
+      receiver_time_callback(latest_receivertime_, read_timestamp);
       break;
 
     // Postion and velocity in XYZ
     case 5903:
-      PvtCartesian latest_pvtxyz;
-      memcpy(&latest_pvtxyz, block+8, sizeof(latest_pvtxyz));
-      pvt_cartesian_callback(latest_pvtxyz, read_timestamp);
+      
+      memcpy(&latest_pvtxyz_, block+8, sizeof(latest_pvtxyz_));
+      pvt_cartesian_callback(latest_pvtxyz_, read_timestamp);
+      latest_odometry_data_.pvt=latest_pvtxyz_;
+      odometry_callback_(latest_odometry_data_,read_timestamp);
       break;
 
     // Position Covariance block
     case 5905:
-      PosCovCartesian latest_pvtxyz_pos_cov;
-      memcpy(&latest_pvtxyz_pos_cov, block+8, sizeof(latest_pvtxyz_pos_cov));
-      pos_cov_cartesian_callback(latest_pvtxyz_pos_cov, read_timestamp);
+      
+      memcpy(&latest_pvtxyz_pos_cov_, block+8, sizeof(latest_pvtxyz_pos_cov_));
+      pos_cov_cartesian_callback(latest_pvtxyz_pos_cov_, read_timestamp);
+      latest_odometry_data_.pos_cov=latest_pvtxyz_pos_cov_;
       break;
 
     // Velocity Covariance block
     case 5907:
-      VelCovCartesian latest_pvtxyz_vel_cov;
-      memcpy(&latest_pvtxyz_vel_cov, block+8, sizeof(latest_pvtxyz_vel_cov));
-      vel_cov_cartesian_callback(latest_pvtxyz_vel_cov, read_timestamp);
+      memcpy(&latest_pvtxyz_vel_cov_, block+8, sizeof(latest_pvtxyz_vel_cov_));
+      vel_cov_cartesian_callback(latest_pvtxyz_vel_cov_, read_timestamp);
+      latest_odometry_data_.vel_cov=latest_pvtxyz_vel_cov;
       break;
 
     // Attitude expressed as Euler Angle 
     case 5938: 
-      AttitudeEuler latest_atteuler;
-      memcpy(&latest_atteuler, block+8, sizeof(latest_atteuler));
-      attitude_euler_callback(latest_atteuler, read_timestamp);
+      memcpy(&latest_atteuler_, block+8, sizeof(latest_atteuler_));
+      attitude_euler_callback(latest_atteuler_, read_timestamp);
+      latest_odometry_data_.att=latest_atteuler_;
       break;
 
     //Attitude covariance (cross terms not currently given)
     case 5939:
-      AttitudeCovEuler latest_atteuler_cov;
-      memcpy(&latest_atteuler_cov, block+8, sizeof(latest_atteuler_cov));
-      attitude_cov_euler_callback(latest_atteuler_cov, read_timestamp);
+      memcpy(&latest_atteuler_cov_, block+8, sizeof(latest_atteuler_cov_));
+      attitude_cov_euler_callback(latest_atteuler_cov_, read_timestamp);
+      latest_odometry_data_.att_cov=latest_atteuler_cov_;
       break;
 
     // //Range (MeasEpoch)

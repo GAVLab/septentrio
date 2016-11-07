@@ -6,6 +6,16 @@
 #include <septentrio/VelCovCartesianMsg.h>
 #include <septentrio/AttitudeEulerMsg.h>
 #include <septentrio/AttitudeCovEulerMsg.h>
+#include "nav_msgs/Odometry.h"
+#include <tf/tf.h>
+#include <tf/transform_broadcaster.h>
+
+
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 
 
 class SeptentrioNode {
@@ -32,6 +42,12 @@ class SeptentrioNode {
     void velCovCaresianCallback(VelCovCartesian&, double&);
     void attitudeEulerCallback(AttitudeEuler&, double&);
     void attitudeCovEulerCallback(AttitudeCovEuler&, double&);
+    void OdometryCallback(OdometryData& ,double&);
+
+  inline double psi2theta(double psi)
+  {
+    return M_PI / 2 - psi;
+  }
 
     ////////////////////
     // ROS attributes // 
@@ -44,6 +60,9 @@ class SeptentrioNode {
     ros::Publisher vel_cov_cartesian_pub;
     ros::Publisher attitude_euler_pub;
     ros::Publisher attitude_cov_euler_pub;
+    ros::Publisher odom_pub_;
+
+    const double degrees_to_radians = M_PI / 180.0;
 
     // driver object
     Septentrio gps;

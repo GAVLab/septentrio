@@ -28,6 +28,15 @@ struct Header
     unsigned short Length; //!< length of the entire message including the header. A multiple of 4 between 8 and 4096
 };
 
+struct OdometryData{
+
+PvtCartesian pvt;
+PosCovCartesian pos_cov;
+VelCovCartesian vel_cov;
+AttitudeEuler   att;
+AttitudeCovEuler att_cov;
+
+};
 
 //structure for the PVTCartesian parsed block 
 struct PvtCartesian //message 5903
@@ -50,7 +59,7 @@ struct PvtCartesian //message 5903
     float RxClkDrift; //Receiver clock drift relative to GPS time (s/s)
     unsigned short MeanCorrAge; //Mean age of differential corrections if applicable (1/100 sec)
     unsigned short ReferenceID; //Reference ID of the base station for differential corrections
-    float course; //Course over ground (degree)
+    float course; //Course over ground (degree) from north
 };
 
 

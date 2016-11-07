@@ -50,6 +50,7 @@ typedef boost::function<void(PosCovCartesian&,  double&)> PosCovCartesianCallbac
 typedef boost::function<void(VelCovCartesian&,  double&)> VelCovCaresianCallback;
 typedef boost::function<void(AttitudeEuler&,    double&)> AttitudeEulerCallback;
 typedef boost::function<void(AttitudeCovEuler&, double&)> AttitudeCovEulerCallback;
+typedef boost::function<void(OdometryData&, double&)> OdometryCallback;
 
 // typedef boost::function<void(CfgPrt&, double&)> PortSettingsCallback;
 
@@ -97,7 +98,7 @@ class Septentrio {
     inline void setVelCovCaresianCallback(VelCovCaresianCallback c) {vel_cov_cartesian_callback = c;};
     inline void setAttitudeEulerCallback(AttitudeEulerCallback c) {attitude_euler_callback = c;};
     inline void setAttitudeCovEulerCallback(AttitudeCovEulerCallback c) {attitude_cov_euler_callback = c;};
-
+    inline void setOdometryCallback(OdometryCallback c) {odometry_callback_ = c;};
   private:
 
     ///////////////////////////
@@ -144,8 +145,14 @@ class Septentrio {
     bool good_antenna_locations;
 
     // stuff that gets stored for the parse function
-    Header latest_header;
-    ReceiverTime latest_receivertime;
+    Header latest_header_;
+    ReceiverTime latest_receivertime_;
+    PvtCartesian latest_pvtxyz_;
+    PosCovCartesian latest_pvtxyz_pos_cov_;
+    VelCovCartesian latest_pvtxyz_vel_cov_;
+    AttitudeEuler latest_atteuler_;
+    AttitudeCovEuler latest_atteuler_cov_;
+    OdometryData latest_odometry_data_;
 
     bool is_rtk; // whether we're in RTK mode
 
@@ -160,6 +167,7 @@ class Septentrio {
     VelCovCaresianCallback        vel_cov_cartesian_callback;
     AttitudeEulerCallback         attitude_euler_callback;
     AttitudeCovEulerCallback      attitude_cov_euler_callback;
+    OdometryCallback              odometry_callback_;
 
 };
 
