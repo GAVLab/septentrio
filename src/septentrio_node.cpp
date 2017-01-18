@@ -3,7 +3,7 @@
  */
 #include <septentrio/septentrio_node.h>
 
-
+ 
 SeptentrioNode::SeptentrioNode()
 {
   std::string name_ = ros::this_node::getName();
@@ -20,6 +20,7 @@ SeptentrioNode::SeptentrioNode()
   gps.setTimeHandler(boost::bind(&SeptentrioNode::getTimeHandler, this));
 
   // setReceiverTimeCallback
+  gps.setReceiverTimeCallback(     boost::bind(&SeptentrioNode::receiverTimeCallback,    this, _1, _2) );
   gps.setPvtCartesianCallback(     boost::bind(&SeptentrioNode::pvtCartestianCallback,    this, _1, _2) );
   gps.setPosCovCartesianCallback(  boost::bind(&SeptentrioNode::posCovCartesianCallback,  this, _1, _2) );
   gps.setVelCovCaresianCallback(   boost::bind(&SeptentrioNode::velCovCaresianCallback,   this, _1, _2) );
@@ -93,6 +94,10 @@ SeptentrioNode::SeptentrioNode()
   nh.getParam(name_+"/rtk_port", rtk_port_);
   nh.getParam(name_+"/rtk_baud", rtk_baud_);
   nh.getParam(name_+"/rtk_format", rtk_format_);
+
+  gps.SetElevationMask(15);
+  gps.SetAttitudeMode();
+  
   if (rtk_format_.length() > 0){
     ROS_INFO_STREAM("\nNode is requesting RTK\n");
     gps.setRTK(rtk_port_, rtk_baud_, rtk_format_);
@@ -115,6 +120,7 @@ void SeptentrioNode::receiverTimeCallback(ReceiverTime& data, double& read_stamp
 //  SteptentrioNode::OdometryCallback  [Private]  --- publishes standard odometry message
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SeptentrioNode::OdometryCallback(OdometryData& data,double& read_stamp){
+  ROS_DEBUG("got odometry message");
 	nav_msgs::Odometry msg;
 	msg.header.stamp=ros::Time().fromSec(read_stamp);
 	msg.header.frame_id="ECEF";
@@ -150,7 +156,7 @@ void SeptentrioNode::OdometryCallback(OdometryData& data,double& read_stamp){
 	msg.twist.covariance[12]=data.vel_cov.Cov_VxVz;
 	msg.twist.covariance[13]=data.vel_cov.Cov_VyVz;
 	msg.twist.covariance[14]=data.vel_cov.Cov_VzVz;
-
+  odom_pub_.publish(msg);
 
 }
 

@@ -11,6 +11,7 @@
  *    http://www.septentrio.com/secure/polarx3_2_2/PolaRx2Manual.pdf
  *
  */
+  
 #ifndef _SEPTENTRIO_H
 #define _SEPTENTRIO_H
 
@@ -85,7 +86,8 @@ class Septentrio {
     bool setRTK(std::string rtk_port, int rtk_baud, std::string rtk_format);
     bool setRTK(); // turn off RTK
 
-
+    void SetElevationMask(int mask_angle);
+    void SetAttitudeMode();
     //////////////////////////////
     // message callback setters //
     //////////////////////////////
@@ -114,6 +116,8 @@ class Septentrio {
     void bufferIncomingData(uint8_t * msg, size_t length); //!< data read from serial port is passed to this method
     void ParseASCII(unsigned char* block); //Parse ASCII message from septentrio
     void ParseBinary(unsigned char* block, unsigned short ID); //!< Parses one septentrio block
+
+    
 
     /////////////////////////////////
     // Serial port reading members // 

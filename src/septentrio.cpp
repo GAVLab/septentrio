@@ -4,7 +4,7 @@
 //  Septentrio Documentation: http://www.septentrio.com/secure/polarx3_2_2/PolaRx2Manual.pdf
 
 #include <septentrio/septentrio.h>
-
+ 
 
 inline void printHex(char *data, int length) {
     for (int i = 0; i < length; ++i) {
@@ -73,7 +73,7 @@ Septentrio::Septentrio()
   vel_cov_cartesian_callback =      defaultVelCovCartesianCallback;
   attitude_euler_callback =         defaultAttitudeEulerCallback;
   attitude_cov_euler_callback =     defaultAttitudeCovEulerCallback;
-  odometry_callback_ =				defaultOdometryCallback;
+  odometry_callback_ =				      defaultOdometryCallback;
   
   output_rate = "1";
   range_output_rate = "1";
@@ -604,23 +604,23 @@ bool Septentrio::setAntennaLocations(int ant_num, double x, double y, double z)
 
 bool Septentrio::setRTK(std::string rtk_port, int rtk_baud, std::string rtk_format)
 {
-  std::cout << "\n\nSetting RTK on in teh driver\n\n\n";
+  std::cout << "\n\nSetting RTK on in the driver\n\n\n";
   //! TODO: check to make sure that rtk_type is one of the 3 supported options
   serial_port->write("SetPVTMode standalone+RTK \r\n");
   std::stringstream cmd;
   cmd << "Set" << rtk_format << "iNput " << rtk_port << " \r\n";
   serial_port->write(cmd.str());
-  std::cout << "just wrote: " << cmd.str();
+  std::cout << "[Septentrio] ust wrote: " << cmd.str();
   cmd.str(std::string());
   cmd << "SetComSettings " << rtk_port << " " << rtk_baud << " \r\n";
   serial_port->write(cmd.str()); 
-  std::cout << "just wrote: " << cmd.str();
+  std::cout << "[Septentrio] just wrote: " << cmd.str();
   // TODO: check output in ASCII
   // TODO: make this a bool function
   // TODO: check the covariance of output solution to make sure it's as low as
   //       an RTK solution should be.
   is_rtk = true;
-  std::cout << "\n\nSet RTK on in driver\n\n";
+  std::cout << "\n\n[Septentrio] Set RTK on in driver\n\n";
   return true;
 }
 
@@ -631,4 +631,35 @@ bool Septentrio::setRTK()
   serial_port->write("SetPVTMode standalone \r\n");
   is_rtk = false;
   return true;
+
 }
+
+
+
+void Septentrio::SetAttitudeMode(){
+  std::cout << "\n\nSetting channel configuration to Attitude Dual Frequancy\n\n\n";
+  serial_port->write("SetChannelConfiguration AttitudeDF auto\r\n");
+
+}
+
+void Septentrio::SetElevationMask(int mask_angle){
+   std::stringstream cmd;
+   std::cout << " Setting Mask angle \n";
+  cmd << "SetElevationMask " << mask_angle << " \r\n";
+  serial_port->write(cmd.str());
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
