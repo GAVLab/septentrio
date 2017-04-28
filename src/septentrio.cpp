@@ -4,7 +4,7 @@
 //  Septentrio Documentation: http://www.septentrio.com/secure/polarx3_2_2/PolaRx2Manual.pdf
 
 #include <septentrio/septentrio.h>
- 
+  
 
 inline void printHex(char *data, int length) {
     for (int i = 0; i < length; ++i) {
@@ -55,6 +55,11 @@ void defaultOdometryCallback(OdometryData& data, double& cpu_stamp){
   std::cout << "defaultOdometryCallback: Received OdometryData" << std::endl;
 }
 
+void defaultRangeCallback(RangeData& data, double& cpu_stamp){
+  std::cout << "defaultRangeCallback: Received RangeData" << std::endl;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 Septentrio::Septentrio()
@@ -74,7 +79,7 @@ Septentrio::Septentrio()
   attitude_euler_callback =         defaultAttitudeEulerCallback;
   attitude_cov_euler_callback =     defaultAttitudeCovEulerCallback;
   odometry_callback_ =				      defaultOdometryCallback;
-  
+  range_callback_=                  defaultRangeCallback;
   output_rate = "1";
   range_output_rate = "1";
 
@@ -271,7 +276,12 @@ void Septentrio::readSerialPort() {
       // timestamp the read
       read_timestamp = time_handler();
       // add data to the buffer to be parsed
+      if (len >0){
       bufferIncomingData(buffer, len);
+
+      }
+      
+      boost::this_thread::sleep(boost::posix_time::milliseconds(10));  // hack
     }
 
 }
@@ -515,6 +525,7 @@ void Septentrio::ParseASCII(unsigned char* block)
       }
     }
   }
+  good_antenna_locations=false; 
   // std::cout << "\nASCII MESSAGE!!!\n";
   //cout<<block;
 }
@@ -569,10 +580,10 @@ void Septentrio::ParseBinary(unsigned char* block, unsigned short ID)
       break;
 
     // //Range (MeasEpoch)
-    // case 5889:
-    //   update_range(block, blockTime);
-
-    //   break;
+    case 5889:
+    UpdateRange(block);
+    range_callback_(latest_range_data, read_timestamp);
+      break;
 
     // //Ephemeris (GPSVav)
     // case 5891:
@@ -582,6 +593,92 @@ void Septentrio::ParseBinary(unsigned char* block, unsigned short ID)
     //   break;
   }
 }
+// /////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////
+
+
+void Septentrio::UpdateRange(unsigned char* block){
+
+  int number_observations_1=0;
+  int number_observations_2=0;
+  int number_observations_3=0;
+
+  int i=0;
+  int byte_track=0;
+  unsigned int antenna;
+  
+  memcpy(&latest_range_heading,block+8,sizeof(latest_range_heading));
+
+  while(i<(unsigned int)latest_range_heading.N)
+  {
+    memcpy(&latest_range_sub_block,block+(byte_track+16),sizeof(latest_range_sub_block));
+    antenna=(unsigned int)latest_range_sub_block.Flags.antennaID;
+
+    switch(antenna){
+      case 1:
+        latest_range_data.SVID_1[number_observations_1]= (unsigned int)latest_range_sub_block.SVID;
+        latest_range_data.CACode_1[number_observations_1]= (double)latest_range_sub_block.CACode;
+        //latest_range_data.P1_CACode_1[number_observations_1]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P1_CACode;
+        //latest_range_data.P2_CACode_1[number_observations_1]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P2_CACode;
+        latest_range_data.L1Phase_1[number_observations_1]= (double)latest_range_sub_block.L1Phase;
+        //latest_range_data.L2Phase_1[number_observations_1]= (double)latest_range_sub_block.L2Phase;
+        latest_range_data.L1Doppler_1[number_observations_1]= (double)latest_range_sub_block.L1Doppler * .0001;
+        //latest_range_data.L2Doppler_1[number_observations_1]= (double)latest_range_sub_block.L2Doppler * .0001;
+        latest_range_data.CAC2N_1[number_observations_1]= (signed int)latest_range_sub_block.CACN0 * .1;
+        //latest_range_data.P1C2N_1[number_observations_1]= (signed int)latest_range_sub_block.P1CN0 * .1;
+        //latest_range_data.P2C2N_1[number_observations_1]= (signed int)latest_range_sub_block.P2CN0 * .1;
+        number_observations_1=number_observations_1+1;
+
+        break;
+      case 2:
+        
+        latest_range_data.SVID_2[number_observations_2]= (unsigned int)latest_range_sub_block.SVID;
+        latest_range_data.CACode_2[number_observations_2]= (double)latest_range_sub_block.CACode;
+        //latest_range_data.P1_CACode_2[number_observations_2]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P1_CACode;
+        //latest_range_data.P2_CACode_2[number_observations_2]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P2_CACode;
+        latest_range_data.L1Phase_2[number_observations_2]= (double)latest_range_sub_block.L1Phase;
+        //latest_range_data.L2Phase_2[number_observations_2]= (double)latest_range_sub_block.L2Phase;
+        latest_range_data.L1Doppler_2[number_observations_2]= (double)latest_range_sub_block.L1Doppler * .0001;
+        //latest_range_data.L2Doppler_2[number_observations_2]= (double)latest_range_sub_block.L2Doppler * .0001;
+        latest_range_data.CAC2N_2[number_observations_2]= (signed int)latest_range_sub_block.CACN0 * .1;
+        //latest_range_data.P1C2N_2[number_observations_2]= (signed int)latest_range_sub_block.P1CN0 * .1;
+        //latest_range_data.P2C2N_2[number_observations_2]= (signed int)latest_range_sub_block.P2CN0 * .1;
+        number_observations_2=number_observations_2+1;
+
+        break;
+      case 3:
+        latest_range_data.SVID_3[number_observations_3]= (unsigned int)latest_range_sub_block.SVID;
+        latest_range_data.CACode_3[number_observations_3]= (double)latest_range_sub_block.CACode;
+        //latest_range_data.P1_CACode_3[number_observations_3]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P1_CACode;
+        //latest_range_data.P2_CACode_3[number_observations_3]= (double)latest_range_sub_block.CACode + (double)latest_range_sub_block.P2_CACode;
+        latest_range_data.L1Phase_3[number_observations_3]= (double)latest_range_sub_block.L1Phase;
+        //latest_range_data.L2Phase_3[number_observations_3]= (double)latest_range_sub_block.L2Phase;
+        latest_range_data.L1Doppler_3[number_observations_3]= (double)latest_range_sub_block.L1Doppler * .0001;
+        //latest_range_data.L2Doppler_3[number_observations_3]= (double)latest_range_sub_block.L2Doppler * .0001;
+        latest_range_data.CAC2N_3[number_observations_3]= (signed int)latest_range_sub_block.CACN0 * .1;
+        //latest_range_data.P1C2N_3[number_observations_3]= (signed int)latest_range_sub_block.P1CN0 * .1;
+        //latest_range_data.P2C2N_3[number_observations_3]= (signed int)latest_range_sub_block.P2CN0 * .1;
+        number_observations_3=number_observations_3+1;
+    }
+
+    i=i+1;
+    byte_track=byte_track+(unsigned int)latest_range_heading.SBLength;
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 bool Septentrio::setAntennaLocations(int ant_num, double x, double y, double z)
@@ -604,16 +701,23 @@ bool Septentrio::setAntennaLocations(int ant_num, double x, double y, double z)
 
 bool Septentrio::setRTK(std::string rtk_port, int rtk_baud, std::string rtk_format)
 {
+  std::stringstream cmd;
   std::cout << "\n\nSetting RTK on in the driver\n\n\n";
+
+  cmd << "SetComSettings " << rtk_port << " " << rtk_baud << " \r\n";
+  
+  serial_port->write(cmd.str()); 
+  boost::this_thread::sleep(boost::posix_time::milliseconds(10)); 
   //! TODO: check to make sure that rtk_type is one of the 3 supported options
   serial_port->write("SetPVTMode standalone+RTK \r\n");
-  std::stringstream cmd;
-  cmd << "Set" << rtk_format << "iNput " << rtk_port << " \r\n";
+  boost::this_thread::sleep(boost::posix_time::milliseconds(10));  
+  
+  cmd << "Set" << rtk_format << "iNput " << rtk_port <<",all,20 \r\n";
   serial_port->write(cmd.str());
+  boost::this_thread::sleep(boost::posix_time::milliseconds(10));  
   std::cout << "[Septentrio] ust wrote: " << cmd.str();
   cmd.str(std::string());
-  cmd << "SetComSettings " << rtk_port << " " << rtk_baud << " \r\n";
-  serial_port->write(cmd.str()); 
+
   std::cout << "[Septentrio] just wrote: " << cmd.str();
   // TODO: check output in ASCII
   // TODO: make this a bool function
@@ -625,7 +729,7 @@ bool Septentrio::setRTK(std::string rtk_port, int rtk_baud, std::string rtk_form
 }
 
 
-bool Septentrio::setRTK()
+bool Septentrio::setRTK() 
 {
   std::cout << "\n\nSetting RTK off in driver\n\n";
   serial_port->write("SetPVTMode standalone \r\n");

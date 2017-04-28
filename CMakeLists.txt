@@ -64,6 +64,7 @@ add_message_files(
     VelCovCartesianMsg.msg
     AttitudeEulerMsg.msg
     AttitudeCovEulerMsg.msg
+    RangeMsg.msg
 )
 
 ## Generate services in the 'srv' folder

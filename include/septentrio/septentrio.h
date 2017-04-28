@@ -52,6 +52,7 @@ typedef boost::function<void(VelCovCartesian&,  double&)> VelCovCaresianCallback
 typedef boost::function<void(AttitudeEuler&,    double&)> AttitudeEulerCallback;
 typedef boost::function<void(AttitudeCovEuler&, double&)> AttitudeCovEulerCallback;
 typedef boost::function<void(OdometryData&, double&)> OdometryCallback;
+typedef boost::function<void(RangeData&, double&)> RangeCallback;
 
 // typedef boost::function<void(CfgPrt&, double&)> PortSettingsCallback;
 
@@ -101,6 +102,7 @@ class Septentrio {
     inline void setAttitudeEulerCallback(AttitudeEulerCallback c) {attitude_euler_callback = c;};
     inline void setAttitudeCovEulerCallback(AttitudeCovEulerCallback c) {attitude_cov_euler_callback = c;};
     inline void setOdometryCallback(OdometryCallback c) {odometry_callback_ = c;};
+    inline void setRangeCallback(RangeCallback c) {range_callback_ = c;};
   private:
 
     ///////////////////////////
@@ -117,7 +119,8 @@ class Septentrio {
     void ParseASCII(unsigned char* block); //Parse ASCII message from septentrio
     void ParseBinary(unsigned char* block, unsigned short ID); //!< Parses one septentrio block
 
-    
+    void UpdateRange(unsigned char* block);
+
 
     /////////////////////////////////
     // Serial port reading members // 
@@ -156,6 +159,9 @@ class Septentrio {
     VelCovCartesian latest_pvtxyz_vel_cov_;
     AttitudeEuler latest_atteuler_;
     AttitudeCovEuler latest_atteuler_cov_;
+    MeasEpoch latest_range_heading;
+    MeasEpochSubBlock latest_range_sub_block;
+    RangeData latest_range_data;
     OdometryData latest_odometry_data_;
 
     bool is_rtk; // whether we're in RTK mode
@@ -172,6 +178,7 @@ class Septentrio {
     AttitudeEulerCallback         attitude_euler_callback;
     AttitudeCovEulerCallback      attitude_cov_euler_callback;
     OdometryCallback              odometry_callback_;
+    RangeCallback             range_callback_;
 
 };
 

@@ -3,7 +3,7 @@
  */
 #include <septentrio/septentrio_node.h>
 
- 
+  
 SeptentrioNode::SeptentrioNode()
 {
   std::string name_ = ros::this_node::getName();
@@ -14,7 +14,8 @@ SeptentrioNode::SeptentrioNode()
   vel_cov_cartesian_pub =   nh.advertise<septentrio::VelCovCartesianMsg>( name_+"/vel_cov_cartesian",  1000);
   attitude_euler_pub =      nh.advertise<septentrio::AttitudeEulerMsg>(   name_+"/attitude_euler",     1000);
   attitude_cov_euler_pub =  nh.advertise<septentrio::AttitudeCovEulerMsg>(name_+"/attitude_cov_euler", 1000);
-  odom_pub_ =nh.advertise<nav_msgs::Odometry>(name_+"/odom", 0),
+  range_pub_= nh.advertise<septentrio::RangeMsg>(name_+"/raw_meas",1);
+  odom_pub_ =nh.advertise<nav_msgs::Odometry>(name_+"/odom", 1);
 
 
   gps.setTimeHandler(boost::bind(&SeptentrioNode::getTimeHandler, this));
@@ -27,6 +28,7 @@ SeptentrioNode::SeptentrioNode()
   gps.setAttitudeEulerCallback(    boost::bind(&SeptentrioNode::attitudeEulerCallback,    this, _1, _2) );
   gps.setAttitudeCovEulerCallback( boost::bind(&SeptentrioNode::attitudeCovEulerCallback, this, _1, _2) );
   gps.setOdometryCallback(boost::bind(&SeptentrioNode::OdometryCallback,this, _1,_2));
+  gps.setRangeCallback(boost::bind(&SeptentrioNode::RangeCallback,this, _1,_2));
 
   // get params, rosparams
   std::string port_, sep_port_, output_rate_, range_output_rate_;
@@ -67,7 +69,9 @@ SeptentrioNode::SeptentrioNode()
   }
   // configure the already-connected receiver
   gps.setOutputRate(output_rate_);
+   boost::this_thread::sleep(boost::posix_time::milliseconds(10));
   gps.setRangeOutputRate(range_output_rate_);
+   boost::this_thread::sleep(boost::posix_time::milliseconds(10));
   gps.setAntennaLocations(1, antenna_1_loc_["x"], antenna_1_loc_["y"], antenna_1_loc_["z"]);
   gps.setAntennaLocations(2, antenna_2_loc_["x"], antenna_2_loc_["y"], antenna_2_loc_["z"]);
   ROS_INFO_STREAM("Septentrio configuration done.");
@@ -77,6 +81,7 @@ SeptentrioNode::SeptentrioNode()
     nh.getParam(name_+"/logs", logs_);
     std::cout << "Septentrio requesting logs: ";
     for (std::vector<std::string>::iterator it=logs_.begin(); it!=logs_.end(); ++it) {
+      boost::this_thread::sleep(boost::posix_time::milliseconds(10)); 
       if (!gps.requestLog(*it)) {
         ROS_WARN_STREAM("Couldn't request desired logs: " << *it);
       }
@@ -115,6 +120,37 @@ void SeptentrioNode::receiverTimeCallback(ReceiverTime& data, double& read_stamp
 {
 
 }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//  SteptentrioNode::RangeCallback  [Private]  --- publishes standard odometry message
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void SeptentrioNode::RangeCallback(RangeData& data, double& read_stamp)
+{septentrio::RangeMsg msg;
+  msg.header.stamp=ros::Time().fromSec(read_stamp);
+  for (int i=0;i<30;i++){
+
+    msg.SVID_1[i]= data.SVID_1[i];
+    msg.CACode_1[i]= data.CACode_1[i];
+    msg.L1Phase_1[i]= data.L1Phase_1[i];
+    msg.L1Doppler_1[i]= data.L1Doppler_1[i];
+    msg.CAC2N_1[i]= data.CAC2N_1[i];
+
+    msg.SVID_2[i]= data.SVID_2[i];
+    msg.CACode_2[i]= data.CACode_2[i];
+    msg.L1Phase_2[i]= data.L1Phase_2[i];
+    msg.L1Doppler_2[i]= data.L1Doppler_2[i];
+    msg.CAC2N_2[i]= data.CAC2N_2[i];
+
+    msg.SVID_3[i]= data.SVID_3[i];
+    msg.CACode_3[i]= data.CACode_3[i];
+    msg.L1Phase_3[i]= data.L1Phase_3[i];
+    msg.L1Doppler_3[i]= data.L1Doppler_3[i];
+    msg.CAC2N_3[i]= data.CAC2N_3[i];
+}
+  range_pub_.publish(msg);
+
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  SteptentrioNode::OdometryCallback  [Private]  --- publishes standard odometry message

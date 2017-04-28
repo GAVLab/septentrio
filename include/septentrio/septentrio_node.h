@@ -6,6 +6,7 @@
 #include <septentrio/VelCovCartesianMsg.h>
 #include <septentrio/AttitudeEulerMsg.h>
 #include <septentrio/AttitudeCovEulerMsg.h>
+#include <septentrio/RangeMsg.h>
 #include "nav_msgs/Odometry.h"
 #include <tf/tf.h>
 #include <tf/transform_broadcaster.h>
@@ -43,6 +44,8 @@ class SeptentrioNode {
     void attitudeEulerCallback(AttitudeEuler&, double&);
     void attitudeCovEulerCallback(AttitudeCovEuler&, double&);
     void OdometryCallback(OdometryData& ,double&);
+    void RangeCallback(RangeData& ,double&);
+
 
   inline double psi2theta(double psi)
   {
@@ -61,6 +64,7 @@ class SeptentrioNode {
     ros::Publisher attitude_euler_pub;
     ros::Publisher attitude_cov_euler_pub;
     ros::Publisher odom_pub_;
+    ros::Publisher range_pub_;
 
     const double degrees_to_radians = M_PI / 180.0;
 

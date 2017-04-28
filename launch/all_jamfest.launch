@@ -1,0 +1,6 @@
+<launch>
+<include file="$(find ublox)/launch/ublox.launch" />
+<include file="$(find ublox)/launch/ublox2.launch" />
+<include file="$(find septentrio)/launch/jamfest_septentrio.launch" />
+<include file="$(find memsense)/launch/memsense.launch" />
+</launch>

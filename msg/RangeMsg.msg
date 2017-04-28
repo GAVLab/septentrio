@@ -1,0 +1,16 @@
+Header header
+uint16[30]  SVID_1
+float64[30] CACode_1
+float64[30] L1Phase_1
+float64[30] L1Doppler_1
+int16[30]  CAC2N_1
+uint16[30]  SVID_2
+float64[30] CACode_2
+float64[30] L1Phase_2
+float64[30] L1Doppler_2
+int16[30]   CAC2N_2
+uint16[30]  SVID_3
+float64[30] CACode_3
+float64[30] L1Phase_3
+float64[30] L1Doppler_3
+int16[30]   CAC2N_3

@@ -239,7 +239,7 @@ struct OdometryData{
 
 
 #pragma pack ( pop ) //See GavlabVehicleCode.pdf for explaination
-struct RANGE_DATA
+struct RangeData
 {
     int SVID_1[30];
     double CACode_1[30];
@@ -276,6 +276,46 @@ struct RANGE_DATA
     double CAC2N_3[30];
     double P1C2N_3[30];
     double P2C2N_3[30];
+
+
+    RangeData(){
+    int SVID_1={0};
+    double CACode_1={0};
+    double P1_CACode_1={0};
+    double P2_CACode_1={0};
+    double L1Phase_1={0};
+    double L2Phase_1={0};
+    double L1Doppler_1={0};
+    double L2Doppler_1={0};
+    double CAC2N_1={0};
+    double P1C2N_1={0};
+    double P2C2N_1={0};
+
+    int SVID_2={0};
+    double CACode_2={0};
+    double P1_CACode_2={0};
+    double P2_CACode_2={0};
+    double L1Phase_2={0};
+    double L2Phase_2={0};
+    double L1Doppler_2={0};
+    double L2Doppler_2={0};
+    double CAC2N_2={0};
+    double P1C2N_2={0};
+    double P2C2N_2={0};
+
+    int SVID_3={0};
+    double CACode_3={0};
+    double P1_CACode_3={0};
+    double P2_CACode_3={0};
+    double L1Phase_3={0};
+    double L2Phase_3={0};
+    double L1Doppler_3={0};
+    double L2Doppler_3={0};
+    double CAC2N_3={0};
+    double P1C2N_3={0};
+    double P2C2N_3={0};
+   
+    }
 
 };
 
