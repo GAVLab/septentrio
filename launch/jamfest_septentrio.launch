@@ -28,7 +28,7 @@
     <param name="septentrio_port"  value="COM1"         type="string"/>
     <param name="output_rate"       value="0.5"   type="string"/>  <!-- actually a period not a rate -->
     <param name="range_output_rate" value="0.2"   type="string"/>  <!-- actually a period not a rate -->
-    
+    <param name="request_rtk" value="false"   type="bool"/>  
     <!-- 
       Log options are:
         - PVTCar: PvtCartesian

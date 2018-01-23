@@ -95,19 +95,22 @@ SeptentrioNode::SeptentrioNode()
   // std::map<std::string,std::string> rtk_;
   // ROS_INFO_STREAM("\n\nasking for param: "<<name_+"/rtk" );
   std::string rtk_port_, rtk_format_;
+  bool request_rtk=false;
   int rtk_baud_;
   nh.getParam(name_+"/rtk_port", rtk_port_);
   nh.getParam(name_+"/rtk_baud", rtk_baud_);
   nh.getParam(name_+"/rtk_format", rtk_format_);
+  nh.getParam(name_+"/request_rtk", request_rtk);
 
   gps.SetElevationMask(15);
   gps.SetAttitudeMode();
   
-  if (rtk_format_.length() > 0){
+  if (request_rtk && rtk_format_.length() > 0){
     ROS_INFO_STREAM("\nNode is requesting RTK\n");
     gps.setRTK(rtk_port_, rtk_baud_, rtk_format_);
   } else {
-    ROS_INFO_STREAM("\n\nAin't doin rtk\n\n");
+    gps.setRTK();
+    ROS_INFO_STREAM("\n\nRequest standard position\n\n");
   }
 }
 
